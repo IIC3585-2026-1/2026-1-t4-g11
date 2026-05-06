@@ -7,7 +7,51 @@
     <title>t4</title>
   </head>
   <body>
-    <div id="app"></div>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <div id="app">
+        <div id="toolbar">
+            <span class="material-symbols-outlined">search</span>
+            <span class="material-symbols-outlined">calendar_today</span>
+            <span class="material-symbols-outlined">bookmark</span>
+        </div>
+        <div id="filebar">
+            <div id="filebar-buttons">
+                <span class="material-symbols-outlined">edit_square</span>
+                <span class="material-symbols-outlined">create_new_folder</span>
+                <span class="material-symbols-outlined">sort</span>
+                <span class="material-symbols-outlined">collapse_all</span>
+            </div>
+            <div id="filebar-files">
+                <p>File 1</p>
+                <p>File 2</p>
+                <p>File 3</p>
+                <p>File 4</p>
+            </div>
+            <div id="filebar-footer">
+                <div id = "vault">
+                    <span class="material-symbols-outlined">keyboard_arrow_down</span>
+                    <span>Vault</span>
+                </div>
+                <span class="material-symbols-outlined">settings</span>
+            </div>
+        </div>
+        <div id="editor">
+            <div id="editor-header">
+                <span id="note-title">Note Title</span>
+                <div id="editor-tools">
+                    <span class="material-symbols-outlined">edit</span>
+                    <span class="material-symbols-outlined">more_vert</span>
+                </div>
+            </div>
+            <div id="editor-content">
+                <h1>Note title</h1>
+                <p>Note content, lorem ipsum dolor sit amet</p>
+            </div>
+        </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
