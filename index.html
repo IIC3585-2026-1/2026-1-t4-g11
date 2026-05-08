@@ -19,10 +19,18 @@
         </div>
         <div id="filebar">
             <div id="filebar-buttons">
-                <span class="material-symbols-outlined">edit_square</span>
-                <span class="material-symbols-outlined">create_new_folder</span>
-                <span class="material-symbols-outlined">sort</span>
-                <span class="material-symbols-outlined">collapse_all</span>
+                <button id="new-file" class="btn">
+                    <span class="material-symbols-outlined">edit_square</span>
+                </button>
+                <button id="new-folder" class="btn">
+                    <span class="material-symbols-outlined">create_new_folder</span>
+                </button>
+                <button id="sort-files" class="btn">
+                    <span class="material-symbols-outlined">sort</span>
+                </button>
+                <button id="collapse-files" class="btn">
+                    <span class="material-symbols-outlined">collapse_all</span>
+                </button>
             </div>
             <div id="filebar-files">
                 <p>File 1</p>
@@ -35,20 +43,33 @@
                     <span class="material-symbols-outlined">keyboard_arrow_down</span>
                     <span>Vault</span>
                 </div>
-                <span class="material-symbols-outlined">settings</span>
+                <button id="get-files" class="btn">
+                    <span class="material-symbols-outlined">refresh</span>
+                </button>
+                <button id="settings" class="btn">
+                    <span class="material-symbols-outlined">settings</span>
+                </button>
             </div>
         </div>
         <div id="editor">
             <div id="editor-header">
                 <span id="note-title">Note Title</span>
                 <div id="editor-tools">
-                    <span class="material-symbols-outlined">edit</span>
-                    <span class="material-symbols-outlined">more_vert</span>
+                    <button id="toggle-view" class="btn" >
+                        <span class="material-symbols-outlined">edit</span>
+                    </button>
+                    <button id="save-note" class="btn">
+                        <span class="material-symbols-outlined">more_vert</span>
+                    </button>
                 </div>
             </div>
             <div id="editor-content">
-                <h1>Note title</h1>
-                <p>Note content, lorem ipsum dolor sit amet</p>
+                <div class="pane" id="editor-pane">
+                    <textarea id="editor-input" aria-label="Markdown editor" placeholder="Write your markdown here..."></textarea>
+                </div>
+                <div class="pane" id="preview-pane">
+                    <div id="preview-content"></div>
+                </div>
             </div>
         </div>
     </div>
