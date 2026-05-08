@@ -8,6 +8,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "katex": "^0.16.45",
+    "marked": "^5.1.2",
+    "marked-extended-latex": "^1.1.0"
+  },
   "devDependencies": {
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
