@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/src/assets/coal.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>t4</title>
   </head>
@@ -12,64 +12,82 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <div id="app">
-        <div id="toolbar">
-            <span class="material-symbols-outlined">search</span>
-            <span class="material-symbols-outlined">calendar_today</span>
-            <span class="material-symbols-outlined">bookmark</span>
-        </div>
-        <div id="filebar">
-            <div id="filebar-buttons">
-                <button id="new-file" class="btn">
-                    <span class="material-symbols-outlined">edit_square</span>
-                </button>
-                <button id="new-folder" class="btn">
-                    <span class="material-symbols-outlined">create_new_folder</span>
-                </button>
-                <button id="sort-files" class="btn">
-                    <span class="material-symbols-outlined">sort</span>
-                </button>
-                <button id="collapse-files" class="btn">
-                    <span class="material-symbols-outlined">collapse_all</span>
-                </button>
+        <input id="sidebar-toggle" class="sidebar-toggle" type="checkbox" aria-label="Toggle sidebar" />
+        <div id="sidebar">
+            <div id="toolbar">
+                <span class="material-symbols-outlined">search</span>
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span class="material-symbols-outlined">bookmark</span>
             </div>
-            <div id="filebar-files">
-                <p>File 1</p>
-                <p>File 2</p>
-                <p>File 3</p>
-                <p>File 4</p>
-            </div>
-            <div id="filebar-footer">
-                <div id = "vault">
-                    <span class="material-symbols-outlined">keyboard_arrow_down</span>
-                    <span>Vault</span>
+            <div id="filebar">
+                <div id="filebar-buttons">
+                    <button id="new-file" class="icon-btn">
+                        <span class="material-symbols-outlined">edit_square</span>
+                    </button>
+                    <button id="new-folder" class="icon-btn">
+                        <span class="material-symbols-outlined">create_new_folder</span>
+                    </button>
+                    <button id="sort-files" class="icon-btn">
+                        <span class="material-symbols-outlined">sort</span>
+                    </button>
+                    <button id="collapse-files" class="icon-btn">
+                        <span class="material-symbols-outlined">collapse_all</span>
+                    </button>
                 </div>
-                <button id="get-files" class="btn">
-                    <span class="material-symbols-outlined">refresh</span>
-                </button>
-                <button id="settings" class="btn">
-                    <span class="material-symbols-outlined">settings</span>
-                </button>
+                <div id="filebar-files">
+                </div>
+                <div id="filebar-footer">
+                    <div id = "vault">
+                        <span class="material-symbols-outlined">keyboard_arrow_down</span>
+                        <span class="vault-name">Crea una boveda</span>
+                    </div>
+                    <button id="get-vault" class="icon-btn">
+                        <span class="material-symbols-outlined">refresh</span>
+                    </button>
+                    <button id="settings" class="icon-btn">
+                        <span class="material-symbols-outlined">settings</span>
+                    </button>
+                </div>
             </div>
         </div>
         <div id="editor">
             <div id="editor-header">
-                <span id="note-title">Note Title</span>
+                <button id="toggle-sidebar" class="icon-btn" aria-label="Toggle sidebar">
+                    <span class="material-symbols-outlined">left_panel_close</span>
+                </button>
+                <input id="note-title" class="editable-name inactive" type="text" value="Nueva pestaña" aria-label="Note title" />
                 <div id="editor-tools">
-                    <button id="toggle-view" class="btn" >
+                    <button id="toggle-view" class="icon-btn" >
                         <span class="material-symbols-outlined">edit</span>
                     </button>
-                    <button id="save-note" class="btn">
+                    <button id="save-note" class="icon-btn">
                         <span class="material-symbols-outlined">more_vert</span>
                     </button>
                 </div>
             </div>
             <div id="editor-content">
-                <div class="pane" id="editor-pane">
+                <div id="vault-empty" class="vault-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
+                    <img id="vault-icon-empty" src="/src/assets/coal.svg" alt="Vault icon"  />
+                    <div style="margin-bottom:12px">No se encontro una boveda</div>
+                    <button id="create-vault" class="text-btn">Crea una boveda</button>
+                </div>
+                <div id="vault-selected" style="display:none;">
+                    <img id="vault-icon-selected" src="/src/assets/coal.svg" alt="Vault icon" />
+                    <span id="vault-name-selected-pane" class="vault-name"></span>
+                    <span>Notas recientes</span>
+                    <ul id="recent-notes"></ul>
+                    <div>
+                        <button id="new-note-vault" class="text-btn">Nueva nota</button>
+                        <button id="change-vault" class="text-btn secondary">Cambiar boveda</button>
+                    </div>
+                </div>
+                <div class="pane" id="editor-pane" style="display:none;">
                     <textarea id="editor-input" aria-label="Markdown editor" placeholder="Write your markdown here..."></textarea>
                 </div>
-                <div class="pane" id="preview-pane">
+                <div class="pane" id="preview-pane" style="display:none;">
                     <div id="preview-content"></div>
                 </div>
+                <label id="sidebar-backdrop" for="sidebar-toggle" aria-hidden="true"></label>
             </div>
         </div>
     </div>
