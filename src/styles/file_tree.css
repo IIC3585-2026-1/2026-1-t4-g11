@@ -1,0 +1,108 @@
+/* File tree */
+/* Tree styles for file explorer */
+.tree-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tree-item {
+  margin: 0;
+  list-style: none;
+  border: 2px solid var(--background);
+  border-radius: 5px;
+}
+
+.tree-item.editing > .tree-header {
+  background-color: var(--selection);
+  border-color: var(--green);
+}
+.tree-item.drop-target {
+  outline: 2px dashed var(--accent-border);
+  background: color-mix(in srgb, var(--background) 80%, var(--accent-bg));
+}
+.tree-item.editing .tree-header {
+  background: transparent;
+}
+.tree-header {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+  border: 2px solid transparent;
+  box-sizing: border-box;
+}
+.tree-header:hover {
+  background-color: var(--grey);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+.file-name-wrapper {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+.tree-name-input {
+  flex: 1;
+  min-width: 0;
+  cursor: default;
+
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  outline: none;
+  padding-right: 0.5rem;
+}
+.caret {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  user-select: none;
+}
+.tree-icon-hidden {
+  visibility: hidden;
+}
+.caret:focus { outline: 1px dashed var(--accent); }
+.tree-name, .file-name { 
+    color: var(--text); 
+    display: inline;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* Keep caret visually unchanged when the parent row is focused/active */
+.tree-item:focus .caret,
+.tree-item:active .caret,
+.tree-item.drop-target .caret {
+  background: transparent;
+  outline: none;
+  box-shadow: none;
+}
+
+/* children container: when expanded show vertical line */
+.children {
+  margin-left: 9px;
+  padding-left: 0.8rem;
+}
+.children.collapsed { display: none; }
+.children.expanded { 
+    display: block; 
+    position: relative; }
+.children.expanded::before {
+  content: '';
+  position: absolute;
+  left: 0.15rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  opacity: 1;
+}

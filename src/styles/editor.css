@@ -1,0 +1,146 @@
+/* Editor */
+
+#editor{
+    background-color: var(--selection);
+    flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+#editor-header{
+    display: flex;
+    flex-direction: row;
+    padding: 1rem 0.5rem;
+  border-bottom: 1px solid var(--grey);
+}
+
+#note-title{
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    text-align: center;
+    outline: none;
+}
+
+#note-title:focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
+#editor-content{
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  padding: 1rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+#editor-content .pane {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--grey);
+  border-radius: 8px;
+  background-color: color-mix(in srgb, var(--background) 65%, transparent);
+  overflow-y: auto;
+}
+
+#editor-pane {
+  display: flex;
+}
+
+#editor-input {
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font: 16px/1.5 var(--mono);
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+#editor-input:focus {
+  outline: none;
+}
+
+#preview-content {
+  padding: 1rem;
+}
+
+#preview-content strong, #preview-content h2 {
+    color: var(--orange);
+}
+#preview-content em, #preview-content h3 {
+    color: var(--green);
+}
+#preview-content h1 {
+    color: var(--purple);
+}
+#preview-content code {
+    background-color: var(--background);
+    padding: 0.1rem 0.1rem;
+    border-radius: 4px;
+    font-family: var(--mono);
+}
+#preview-content math {
+    padding-block: 0.5rem;
+}
+#preview-content p{
+    padding-block: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  #editor-content {
+  flex-direction: column;
+  }
+}
+
+/* No vault pane */
+
+#vault-empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+}
+
+#vault-icon-empty, #vault-icon-selected {
+    width: 10rem;
+
+}
+
+/* Vault selected pane */
+
+#vault-selected {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#vault-name-selected-pane {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--green);
+}
+
+#recent-notes {
+    padding: 2rem 0;
+}
+
+.recent-note-item {
+    list-style: none;
+    margin-block: 0.5rem;
+}
