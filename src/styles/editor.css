@@ -15,6 +15,12 @@
   border-bottom: 1px solid var(--grey);
 }
 
+#editor-tools {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
 #note-title{
     border: 0;
     background: transparent;
@@ -25,12 +31,6 @@
     justify-content: center;
     text-align: center;
     outline: none;
-}
-
-#note-title:focus {
-  outline: 1px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: 4px;
 }
 
 #editor-content{

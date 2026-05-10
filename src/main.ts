@@ -13,6 +13,8 @@ import {
     setTreeItemEditingState,
     createDirectoryWithName,
     getTree,
+    hasExpandedFolders,
+    setAllFoldersExpanded,
     type TreeRenderHooks,
     type TreeState,
 } from './file_tree';
@@ -26,6 +28,8 @@ const noteTitleInput = document.getElementById('note-title') as HTMLInputElement
 const filebarFiles = document.getElementById('filebar-files') as HTMLElement | null;
 const app = document.getElementById('app') as HTMLElement | null;
 const toggleBarsButton = document.querySelector('#toggle-sidebar') as HTMLElement | null;
+const collapseFilesButton = document.querySelector('#collapse-files') as HTMLButtonElement | null;
+const collapseFilesIcon = collapseFilesButton?.querySelector('.material-symbols-outlined') as HTMLElement | null;
 
 const refs: EditorRefs = {
     editorContent,
@@ -50,11 +54,19 @@ const treeHooks: TreeRenderHooks = {
 
 async function syncFileTree() {
     await refreshFileTree(appState, filebarFiles, treeHooks);
+    updateCollapseFilesButtonIcon();
     updateEditorView();
 }
 
 async function refreshTreeOnly() {
     await refreshFileTree(appState, filebarFiles, treeHooks);
+    updateCollapseFilesButtonIcon();
+}
+
+function updateCollapseFilesButtonIcon() {
+    if (!collapseFilesIcon) return;
+
+    collapseFilesIcon.textContent = hasExpandedFolders(filebarFiles) ? 'collapse_all' : 'expand_all';
 }
 
 function setEditorPaneVisible(isEditorVisible: boolean) {
@@ -147,7 +159,9 @@ function updateEditorView() {
         setVaultViewState(true);
 
         const vaultSelected = document.getElementById('vault-selected') as HTMLElement | null;
-        if (vaultSelected) vaultSelected.style.display = 'flex';
+        if (vaultSelected) {
+            vaultSelected.style.display = appState.currentFileHandle ? 'none' : 'flex';
+        }
         if (appState.folderHandle) {
             const vaultName = (appState.folderHandle as any).name || 'Vault';
             const vaultNameElements = document.querySelectorAll<HTMLElement>('.vault-name');
@@ -231,6 +245,24 @@ if (toggleViewButton) {
 if (toggleBarsButton) {
     toggleBarsButton.addEventListener('click', () => {
         updateSidebarState();
+    });
+}
+
+if (collapseFilesButton) {
+    collapseFilesButton.addEventListener('click', () => {
+        const shouldCollapse = collapseFilesIcon?.textContent === 'collapse_all';
+        setAllFoldersExpanded(filebarFiles, !shouldCollapse);
+        updateCollapseFilesButtonIcon();
+    });
+}
+
+if (filebarFiles) {
+    filebarFiles.addEventListener('click', () => {
+        window.requestAnimationFrame(updateCollapseFilesButtonIcon);
+    });
+
+    filebarFiles.addEventListener('keydown', () => {
+        window.requestAnimationFrame(updateCollapseFilesButtonIcon);
     });
 }
 
@@ -347,6 +379,7 @@ if (editorContent) {
 }
 
 updatePreview(editorContent, previewContent);
+updateCollapseFilesButtonIcon();
 
 // initialize editor view based on whether a vault is selected
 updateEditorView();

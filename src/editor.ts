@@ -72,7 +72,7 @@ export function loadMarkdownFile(
 
     if (refs.noteTitleInput && filename) refs.noteTitleInput.value = filename;
     if (filename) state.currentFileName = filename;
-    setNoteTitleState(refs.noteTitleInput, false);
+    setNoteTitleState(refs.noteTitleInput, !!filename);
 
     if (refs.editorContent) {
         refs.editorContent.value = md;
