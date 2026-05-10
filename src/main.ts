@@ -305,13 +305,8 @@ window.addEventListener("resize", syncSidebarVisibilityForViewport);
 bindCreateVaultButton();
 
 document.querySelector("#get-vault")!.addEventListener("click", async () => {
-  try {
-    appState.folderHandle = await window.showDirectoryPicker();
-    await syncFileTree();
-    updateEditorView();
-  } catch (error) {
-    console.error(error);
-  }
+  appState.currentFileId = null;
+  syncFileTree();
 });
 
 document.querySelector("#new-file")?.addEventListener("click", () => {
@@ -409,10 +404,10 @@ if (noteTitleInput) {
     if (event.key === "Enter") {
       event.preventDefault();
       if (!noteTitleInput.readOnly && appState.currentFileId) {
-	    appState.vaultHandle.change(vault => {
-		    const note = vault.notes.find(n => n.id === appState.currentFileId);
-		    note.name = event.target.value;
-	    });
+        appState.vaultHandle.change((vault) => {
+          const note = vault.notes.find((n) => n.id === appState.currentFileId);
+          note.name = event.target.value;
+        });
       }
 
       noteTitleInput.blur();
