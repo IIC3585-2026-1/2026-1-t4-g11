@@ -1,30 +1,30 @@
 /* Editor */
 
-#editor{
-    background-color: var(--selection);
-    flex: 1;
+#editor {
+  background-color: var(--selection);
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-#editor-header{
-    display: flex;
-    flex-direction: row;
-    padding: 1rem 0.5rem;
+#editor-header {
+  display: flex;
+  flex-direction: row;
+  padding: 1rem 0.5rem;
   border-bottom: 1px solid var(--grey);
 }
 
-#note-title{
-    border: 0;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    text-align: center;
-    outline: none;
+#note-title {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  text-align: center;
+  outline: none;
 }
 
 #note-title:focus {
@@ -33,7 +33,7 @@
   border-radius: 4px;
 }
 
-#editor-content{
+#editor-content {
   display: flex;
   flex-direction: row;
   gap: 1rem;
@@ -75,72 +75,74 @@
   padding: 1rem;
 }
 
-#preview-content strong, #preview-content h2 {
-    color: var(--orange);
+#preview-content strong,
+#preview-content h2 {
+  color: var(--orange);
 }
-#preview-content em, #preview-content h3 {
-    color: var(--green);
+#preview-content em,
+#preview-content h3 {
+  color: var(--green);
 }
 #preview-content h1 {
-    color: var(--purple);
+  color: var(--purple);
 }
 #preview-content code {
-    background-color: var(--background);
-    padding: 0.1rem 0.1rem;
-    border-radius: 4px;
-    font-family: var(--mono);
+  background-color: var(--background);
+  padding: 0.1rem 0.1rem;
+  border-radius: 4px;
+  font-family: var(--mono);
 }
 #preview-content math {
-    padding-block: 0.5rem;
+  padding-block: 0.5rem;
 }
-#preview-content p{
-    padding-block: 0.5rem;
+#preview-content p {
+  padding-block: 0.5rem;
 }
 
 @media (max-width: 900px) {
   #editor-content {
-  flex-direction: column;
+    flex-direction: column;
   }
 }
 
 /* No vault pane */
 
 #vault-empty {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    gap: 1rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
 }
 
-#vault-icon-empty, #vault-icon-selected {
-    width: 10rem;
-
+#vault-icon-empty,
+#vault-icon-selected {
+  width: 10rem;
 }
 
 /* Vault selected pane */
 
 #vault-selected {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 #vault-name-selected-pane {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--green);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--green);
 }
 
 #recent-notes {
-    padding: 2rem 0;
+  padding: 2rem 0;
 }
 
 .recent-note-item {
-    list-style: none;
-    margin-block: 0.5rem;
+  list-style: none;
+  margin-block: 0.5rem;
 }

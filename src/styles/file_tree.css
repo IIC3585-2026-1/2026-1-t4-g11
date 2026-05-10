@@ -37,7 +37,6 @@
   cursor: pointer;
 }
 
-
 .file-name-wrapper {
   display: flex;
   align-items: center;
@@ -68,14 +67,17 @@
 .tree-icon-hidden {
   visibility: hidden;
 }
-.caret:focus { outline: 1px dashed var(--accent); }
-.tree-name, .file-name { 
-    color: var(--text); 
-    display: inline;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    min-width: 0;
+.caret:focus {
+  outline: 1px dashed var(--accent);
+}
+.tree-name,
+.file-name {
+  color: var(--text);
+  display: inline;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 /* Keep caret visually unchanged when the parent row is focused/active */
@@ -92,12 +94,15 @@
   margin-left: 9px;
   padding-left: 0.8rem;
 }
-.children.collapsed { display: none; }
-.children.expanded { 
-    display: block; 
-    position: relative; }
+.children.collapsed {
+  display: none;
+}
+.children.expanded {
+  display: block;
+  position: relative;
+}
 .children.expanded::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0.15rem;
   top: 0;

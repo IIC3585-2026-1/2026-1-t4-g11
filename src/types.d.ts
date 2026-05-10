@@ -1,2 +1,2 @@
-declare module 'marked';
-declare module 'marked-extended-latex';
+declare module "marked";
+declare module "marked-extended-latex";
