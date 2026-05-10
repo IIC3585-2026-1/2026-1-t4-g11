@@ -86,6 +86,8 @@ function updateSidebarState() {
     const sidebar = document.getElementById('sidebar') as HTMLElement | null;
     if (!sidebar) return;
 
+    if (!toggleBarsButton) return;
+
     if (isMobileSidebarMode()) {
         // Let the checkbox + CSS drive sidebar visibility on narrow aspect ratios.
         return;
@@ -93,11 +95,20 @@ function updateSidebarState() {
 
     const isHidden = sidebar.style.display === 'none';
 
+    const icon = document.getElementById('toggle-sidebar-icon');
+
     if (isHidden) {
         sidebar.style.display = 'flex';
     } else {
         sidebar.style.display = 'none';
     }
+
+    if (icon){
+        icon.textContent = isHidden ? 'left_panel_close' : 'left_panel_open';
+    }
+
+    
+
 }
 
 function bindCreateVaultButton() {
