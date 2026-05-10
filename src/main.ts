@@ -17,6 +17,10 @@ import {
     type TreeState,
 } from './file_tree';
 
+import { DocHandle, Repo, type AutomergeUrl } from '@automerge/automerge-repo';
+import { BroadcastChannelNetworkAdapter } from '@automerge/automerge-repo-network-broadcastchannel';
+import { IndexedDBStorageAdapter } from '@automerge/automerge-repo-storage-indexeddb';
+
 const editorContent = document.getElementById('editor-input') as HTMLTextAreaElement | null;
 if (editorContent) editorContent.spellcheck = true;
 
@@ -34,10 +38,9 @@ const refs: EditorRefs = {
 };
 
 const appState: EditorState & TreeState = {
-    folderHandle: null,
-    currentFileHandle: null,
-    currentFileParentHandle: null,
-    currentFileName: null,
+	vaultUrl: null,
+	vaultHandle: null,
+    currentFileId: null,
     saveTimer: undefined,
     dragPayload: null,
     noteTitleInput,
@@ -45,10 +48,28 @@ const appState: EditorState & TreeState = {
 
 const treeHooks: TreeRenderHooks = {
     setTreeItemEditingState,
-    loadMarkdownFile: (md, filename) => loadMarkdownFile(appState, refs, md, filename),
+    loadMarkdownFile: () => loadMarkdownFile(appState, refs),
 };
 
-async function syncFileTree() {
+const repo = new Repo({
+  network: [new BroadcastChannelNetworkAdapter()],
+  storage: new IndexedDBStorageAdapter(),
+});
+
+function vaultDocChangeHandler(handle: DocHandler) {
+	console.log("change", handle.doc())
+	syncFileTree()
+}
+
+appState.vaultUrl = null; //localStorage.getItem("root-vault-url") as AutomergeUrl | null;
+
+if (appState.vaultUrl) {
+	appState.vaultHandle =  await repo.find(appState.vaultUrl);
+	appState.vaultHandle.onchange = vaultDocChangeHandler
+}
+
+
+const syncFileTree = async () => {
     await refreshFileTree(appState, filebarFiles, treeHooks);
     updateEditorView();
 }
@@ -106,8 +127,12 @@ function bindCreateVaultButton() {
 
     btnEl.onclick = async () => {
         try {
-            appState.folderHandle = await window.showDirectoryPicker();
-            if (!appState.folderHandle) return;
+		appState.vaultHandle = repo.create({notes: [{id: 1, name: "test", contents: "aaa"}]})
+		console.log(appState.vaultHandle)
+		appState.vaultHandle.onchange = vaultDocChangeHandler
+		appState.vaultUrl = appState.vaultHandle.url;
+		localStorage.setItem("root-vault-url", appState.vaultUrl);
+		appState.vaultHandle.change(doc => doc.test = "b")
             await syncFileTree();
         } catch (error) {
             console.error('Failed to create vault', error);
@@ -130,15 +155,15 @@ function setVaultViewState(hasVault: boolean) {
 }
 
 function updateEditorView() {
-    if (!appState.folderHandle) {
+    if (!appState.vaultHandle) {
         setVaultViewState(false);
     } else {
         setVaultViewState(true);
 
         const vaultSelected = document.getElementById('vault-selected') as HTMLElement | null;
         if (vaultSelected) vaultSelected.style.display = 'flex';
-        if (appState.folderHandle) {
-            const vaultName = (appState.folderHandle as any).name || 'Vault';
+        if (appState.vaultHandle) {
+            const vaultName = (appState.vaultHandle as any).name || 'Vault';
             const vaultNameElements = document.querySelectorAll<HTMLElement>('.vault-name');
             vaultNameElements.forEach((element) => {
                 element.textContent = vaultName;
@@ -150,8 +175,9 @@ function updateEditorView() {
 }
 
 async function populateRecentNotes() {
+	return; // TODO
     const recentEl = document.getElementById('recent-notes') as HTMLUListElement | null;
-    if (!recentEl || !appState.folderHandle) return;
+    if (!recentEl || !appState.vaultHandle) return;
 
     if (recentEl.children.length) return;
 
@@ -239,6 +265,10 @@ document.querySelector('#new-file')?.addEventListener('click', () => {
     void createMarkdownFile(appState, refs, refreshTreeOnly);
 });
 
+document.querySelector('#new-note-vault')?.addEventListener('click', () => {
+    void createMarkdownFile(appState, refs, refreshTreeOnly);
+});
+
 document.querySelector('#new-folder')?.addEventListener('click', async () => {
     try {
         if (!appState.folderHandle) {
@@ -322,13 +352,17 @@ if (noteTitleInput) {
 }
 
 if (editorContent) {
-    editorContent.addEventListener('input', () => {
+    editorContent.addEventListener('input', (e) => {
         updatePreview(editorContent, previewContent);
 
-        if (appState.saveTimer) window.clearTimeout(appState.saveTimer);
-        appState.saveTimer = window.setTimeout(() => {
-            void saveCurrentFile(appState, editorContent);
-        }, 500);
+	if (!appState.vaultHandle) return;
+	if (!appState.currentFileId) return;
+
+	appState.vaultHandle.change(vault => {
+		const index = vault.notes.findIndex(n => n.id == appState.currentFileId)
+		const note = vault.notes[index]
+		vault.notes[index] = { ...note, contents: e.target.value}
+	});
     });
 }
 

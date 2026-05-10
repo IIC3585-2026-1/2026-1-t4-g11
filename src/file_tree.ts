@@ -14,10 +14,8 @@ export type TreeDragPayload = {
 } | null;
 
 export type TreeState = {
-    folderHandle: FileSystemDirectoryHandle | null;
-    currentFileHandle: FileSystemFileHandle | null;
-    currentFileParentHandle: FileSystemDirectoryHandle | null;
-    currentFileName: string | null;
+    vaultHandle: FileSystemDirectoryHandle | null;
+    currentFileId: FileSystemFileHandle | null;
     dragPayload: TreeDragPayload;
     noteTitleInput: HTMLInputElement | null;
 };
@@ -242,11 +240,10 @@ export async function refreshFileTree(
     container: HTMLElement | null,
     hooks: TreeRenderHooks,
 ) {
-    if (!state.folderHandle || !container) return;
+    if (!state.vaultHandle || !container) return;
 
-    const tree = await getTree(state.folderHandle);
     container.innerHTML = '';
-    renderTree(tree, container, state, hooks);
+    renderTree(state.vaultHandle.doc(), container, state, hooks);
 }
 
 export function renderTree(
@@ -258,440 +255,229 @@ export function renderTree(
     const ul = document.createElement('ul');
     ul.className = 'tree-list';
 
-    entries.forEach((entry) => {
-        const li = document.createElement('li');
-        li.className = 'tree-item';
-        li.tabIndex = 0;
-        li.setAttribute('role', 'button');
-        li.setAttribute('aria-label', entry.name);
-
-        const caret = document.createElement('span');
-        caret.className = 'caret material-symbols-outlined';
-        caret.textContent = 'keyboard_arrow_right';
-
-        if (entry.kind === 'directory') {
-            li.setAttribute('aria-expanded', 'false');
-
-            const header = document.createElement('div');
-            header.className = 'tree-header file-header';
-
-            const folderNameWrapper = document.createElement('div');
-            folderNameWrapper.className = 'file-name-wrapper';
-
-            const folderName = document.createElement('input');
-            folderName.className = 'file-name tree-name-input';
-            folderName.value = entry.name;
-            folderName.type = 'text';
-            folderName.readOnly = true;
-            folderName.tabIndex = -1;
-
-            header.appendChild(caret);
-            folderNameWrapper.appendChild(folderName);
-            header.appendChild(folderNameWrapper);
-
-            const startEditing = () => {
-                if (!entry.handle) return;
-                setTreeItemEditingState(li, folderName, true);
-                folderName.focus();
-                folderName.select();
-            };
-
-            const toggleFolder = () => {
-                const isCollapsed = childrenContainer.classList.toggle('collapsed');
-                childrenContainer.classList.toggle('expanded', !isCollapsed);
-                caret.textContent = isCollapsed ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
-                li.setAttribute('aria-expanded', String(!isCollapsed));
-            };
-
-            li.draggable = true;
-            li.addEventListener('dragstart', (ev) => {
-                if (!entry.handle) return;
-                state.dragPayload = { kind: 'directory', name: entry.name, handle: entry.handle, parentHandle: entry.parentHandle ?? null };
-                try {
-                    ev.dataTransfer?.setData('text/plain', JSON.stringify({ kind: 'directory', name: entry.name }));
-                } catch {
-                    // ignore clipboard/drag data errors
-                }
-            });
-
-            li.addEventListener('dragover', (ev) => {
-                ev.preventDefault();
-                const x = (ev as DragEvent).clientX;
-                const y = (ev as DragEvent).clientY;
-                const element = document.elementFromPoint(x, y) as HTMLElement | null;
-                const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
-                const childrenContainer = li.querySelector('.children') as HTMLElement | null;
-                const isCollapsed = childrenContainer ? childrenContainer.classList.contains('collapsed') : true;
-
-                if (isCollapsed) {
-                    li.classList.add('drop-target');
-                    return;
-                }
-
-                if (nearest === li) {
-                    li.classList.add('drop-target');
-                } else {
-                    li.classList.remove('drop-target');
-                }
-            });
-
-            li.addEventListener('dragleave', (ev) => {
-                const x = (ev as DragEvent).clientX;
-                const y = (ev as DragEvent).clientY;
-                const element = document.elementFromPoint(x, y) as HTMLElement | null;
-                const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
-                const childrenContainer = li.querySelector('.children') as HTMLElement | null;
-                const isCollapsed = childrenContainer ? childrenContainer.classList.contains('collapsed') : true;
-
-                if (isCollapsed) {
-                    if (nearest !== li) li.classList.remove('drop-target');
-                    return;
-                }
-
-                if (nearest !== li) li.classList.remove('drop-target');
-            });
-
-            li.addEventListener('drop', async (ev) => {
-                ev.preventDefault();
-                li.classList.remove('drop-target');
-                if (!state.dragPayload || !entry.handle) return;
-
-                const x = (ev as DragEvent).clientX;
-                const y = (ev as DragEvent).clientY;
-                const element = document.elementFromPoint(x, y) as HTMLElement | null;
-                const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
-                const childrenContainer = li.querySelector('.children') as HTMLElement | null;
-                const isCollapsed = childrenContainer ? childrenContainer.classList.contains('collapsed') : true;
-
-                if (!isCollapsed && nearest !== li) return;
-                if (state.dragPayload.kind === 'directory' && state.dragPayload.handle === entry.handle) return;
-
-                const fromParent = state.dragPayload.parentHandle;
-                const draggedHandle = state.dragPayload.handle;
-
-                try {
-                    if (!fromParent) return;
-                    if (state.dragPayload.kind === 'file') {
-                        await moveFile(fromParent, draggedHandle as FileSystemFileHandle, state.dragPayload.name, entry.handle as FileSystemDirectoryHandle);
-                    } else {
-                        await moveDirectory(fromParent, draggedHandle as FileSystemDirectoryHandle, state.dragPayload.name, entry.handle as FileSystemDirectoryHandle);
-                    }
-                    await refreshFileTree(state, parent, hooks);
-                } catch (error) {
-                    console.error('Failed to move entry', error);
-                } finally {
-                    state.dragPayload = null;
-                }
-            });
-
-            const commitEditing = async () => {
-                if (!entry.handle || !entry.parentHandle) return;
-                if (folderName.readOnly) return;
-
-                const requestedName = folderName.value;
-                const normalizedRequestedName = requestedName.trim();
-                if (!normalizedRequestedName || normalizedRequestedName === entry.name) {
-                    folderName.value = entry.name;
-                    setTreeItemEditingState(li, folderName, false);
-                    return;
-                }
-
-                try {
-                    const previousHandle = entry.handle;
-                    const result = await renameDirectory(entry.parentHandle, previousHandle as FileSystemDirectoryHandle, entry.name, requestedName);
-                    entry.handle = result.directoryHandle;
-                    entry.name = result.name;
-                    folderName.value = result.name;
-
-                    if (state.currentFileParentHandle === previousHandle && state.currentFileName) {
-                        state.currentFileParentHandle = result.directoryHandle;
-                        try {
-                            state.currentFileHandle = await result.directoryHandle.getFileHandle(state.currentFileName);
-                        } catch {
-                            state.currentFileHandle = null;
-                        }
-
-                        if (state.noteTitleInput) state.noteTitleInput.value = state.currentFileName;
-                    }
-
-                    await refreshFileTree(state, parent, hooks);
-                } catch (error) {
-                    console.error('Failed to rename folder', error);
-                    folderName.value = entry.name;
-                } finally {
-                    setTreeItemEditingState(li, folderName, false);
-                }
-            };
-
-            folderName.addEventListener('dblclick', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                startEditing();
-            });
-
-            folderName.addEventListener('blur', () => {
-                void commitEditing();
-            });
-
-            folderName.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    folderName.blur();
-                }
-
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    folderName.value = entry.name;
-                    setTreeItemEditingState(li, folderName, false);
-                }
-            });
-
-            li.appendChild(header);
-
-            const childrenContainer = document.createElement('div');
-            childrenContainer.className = 'children collapsed';
-            if (entry.children && entry.children.length) {
-                renderTree(entry.children, childrenContainer, state, hooks);
-            }
-            li.appendChild(childrenContainer);
-
-            li.addEventListener('click', (event) => {
-                event.stopPropagation();
-                toggleFolder();
-            });
-
-            li.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    toggleFolder();
-                }
-            });
-
-            caret.draggable = true;
-            caret.addEventListener('dragstart', (ev) => {
-                if (!entry.handle) return;
-                state.dragPayload = { kind: 'directory', name: entry.name, handle: entry.handle, parentHandle: entry.parentHandle ?? null };
-                try {
-                    ev.dataTransfer?.setData('text/plain', JSON.stringify({ kind: 'directory', name: entry.name }));
-                } catch {
-                    // ignore clipboard/drag data errors
-                }
-            });
-        } else {
-            const header = document.createElement('div');
-            header.className = 'tree-header file-header';
-
-            const fileNameWrapper = document.createElement('div');
-            fileNameWrapper.className = 'file-name-wrapper';
-
-            const fileName = document.createElement('input');
-            fileName.className = 'file-name tree-name-input';
-            fileName.value = entry.name;
-            fileName.type = 'text';
-            fileName.readOnly = true;
-            fileName.tabIndex = -1;
-
-            caret.style.visibility = 'hidden';
-            caret.classList.add('tree-icon-hidden');
-            header.appendChild(caret);
-            fileNameWrapper.appendChild(fileName);
-            header.appendChild(fileNameWrapper);
-
-            const startEditing = () => {
-                if (!entry.handle) return;
-                setTreeItemEditingState(li, fileName, true);
-                fileName.focus();
-                fileName.select();
-            };
-
-            const openFile = async () => {
-                if (!fileName.readOnly) return;
-                if (!entry.handle) return;
-                try {
-                    state.currentFileHandle = entry.handle as FileSystemFileHandle;
-                    state.currentFileParentHandle = entry.parentHandle ?? null;
-                    state.currentFileName = entry.name;
-                    const file = await state.currentFileHandle.getFile();
-                    const text = await file.text();
-                    hooks.loadMarkdownFile(text, entry.name);
-                } catch (error) {
-                    console.error('Failed to open file', error);
-                }
-            };
-
-            li.draggable = true;
-            li.addEventListener('dragstart', (ev) => {
-                if (!entry.handle) return;
-                state.dragPayload = { kind: 'file', name: entry.name, handle: entry.handle, parentHandle: entry.parentHandle ?? null };
-                try {
-                    ev.dataTransfer?.setData('text/plain', JSON.stringify({ kind: 'file', name: entry.name }));
-                } catch {
-                    // ignore clipboard/drag data errors
-                }
-            });
-
-            li.addEventListener('dragover', (ev) => {
-                ev.preventDefault();
-                const x = (ev as DragEvent).clientX;
-                const y = (ev as DragEvent).clientY;
-                const element = document.elementFromPoint(x, y) as HTMLElement | null;
-                const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
-
-                const container = li.closest('.children') as HTMLElement | null;
-                if (!container) {
-                    li.classList.remove('drop-target');
-                    return;
-                }
-
-                const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
-                if (!parentFolderLi) return;
-
-                const nearestChildren = element?.closest('.children') as HTMLElement | null;
-
-                if (nearest === parentFolderLi) {
-                    parentFolderLi.classList.add('drop-target');
-                    return;
-                }
-
-                if (nearestChildren === container) {
-                    parentFolderLi.classList.add('drop-target');
-                    return;
-                }
-
-                parentFolderLi.classList.remove('drop-target');
-            });
-
-            li.addEventListener('dragleave', (ev) => {
-                const x = (ev as DragEvent).clientX;
-                const y = (ev as DragEvent).clientY;
-                const element = document.elementFromPoint(x, y) as HTMLElement | null;
-                const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
-
-                const container = li.closest('.children') as HTMLElement | null;
-                if (!container) return;
-                const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
-                if (!parentFolderLi) return;
-
-                const nearestChildren = element?.closest('.children') as HTMLElement | null;
-
-                if (nearest === parentFolderLi) return;
-                if (nearestChildren === container) return;
-                parentFolderLi.classList.remove('drop-target');
-            });
-
-            li.addEventListener('drop', async (ev) => {
-                ev.preventDefault();
-                li.classList.remove('drop-target');
-                if (!state.dragPayload) return;
-
-                const container = li.closest('.children') as HTMLElement | null;
-                if (!container) return;
-
-                const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
-                if (!parentFolderLi) return;
-
-                const targetParent = entry.parentHandle;
-                if (!targetParent) return;
-
-                const fromParent = state.dragPayload.parentHandle;
-                const draggedHandle = state.dragPayload.handle;
-
-                try {
-                    if (!fromParent) return;
-                    if (state.dragPayload.kind === 'file') {
-                        await moveFile(fromParent, draggedHandle as FileSystemFileHandle, state.dragPayload.name, targetParent);
-                    } else {
-                        if (state.dragPayload.handle === entry.handle) return;
-                        await moveDirectory(fromParent, draggedHandle as FileSystemDirectoryHandle, state.dragPayload.name, targetParent);
-                    }
-                    await refreshFileTree(state, parent, hooks);
-                } catch (error) {
-                    console.error('Failed to move entry', error);
-                } finally {
-                    state.dragPayload = null;
-                    parentFolderLi.classList.remove('drop-target');
-                }
-            });
-
-            const commitEditing = async () => {
-                if (!entry.handle || !entry.parentHandle) return;
-                if (fileName.readOnly) return;
-
-                const requestedName = fileName.value;
-                const normalizedRequestedName = normalizeMarkdownName(requestedName);
-                if (!normalizedRequestedName || normalizedRequestedName === entry.name) {
-                    fileName.value = entry.name;
-                    setTreeItemEditingState(li, fileName, false);
-                    return;
-                }
-
-                try {
-                    const previousHandle = entry.handle;
-                    const result = await renameMarkdownFile(entry.parentHandle, previousHandle as FileSystemFileHandle, entry.name, requestedName);
-                    entry.handle = result.fileHandle;
-                    entry.name = result.name;
-                    fileName.value = result.name;
-
-                    if (state.currentFileHandle && state.currentFileHandle === previousHandle) {
-                        state.currentFileHandle = result.fileHandle;
-                        state.currentFileParentHandle = entry.parentHandle;
-                        state.currentFileName = result.name;
-                        if (state.noteTitleInput) state.noteTitleInput.value = result.name;
-                    }
-
-                    await refreshFileTree(state, parent, hooks);
-                } catch (error) {
-                    console.error('Failed to rename file', error);
-                    fileName.value = entry.name;
-                } finally {
-                    setTreeItemEditingState(li, fileName, false);
-                }
-            };
-
-            li.addEventListener('click', () => {
-                void openFile();
-            });
-
-            li.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    void openFile();
-                }
-            });
-
-            fileName.addEventListener('click', (event) => {
-                event.stopPropagation();
-                void openFile();
-            });
-
-            fileName.addEventListener('dblclick', (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                startEditing();
-            });
-
-            fileName.addEventListener('blur', () => {
-                void commitEditing();
-            });
-
-            fileName.addEventListener('keydown', (event) => {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    fileName.blur();
-                }
-
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    fileName.value = entry.name;
-                    setTreeItemEditingState(li, fileName, false);
-                }
-            });
-
-            li.appendChild(header);
-        }
-
-        ul.appendChild(li);
+    entries.notes.forEach((entry) => {
+	    console.log(entry)
+	    const li = document.createElement('li');
+	    li.className = 'tree-item';
+	    li.tabIndex = 0;
+	    li.setAttribute('role', 'button');
+	    li.setAttribute('aria-label', entry.name);
+
+	    const caret = document.createElement('span');
+	    caret.className = 'caret material-symbols-outlined';
+	    caret.textContent = 'keyboard_arrow_right';
+
+	    const header = document.createElement('div');
+	    header.className = 'tree-header file-header';
+
+	    const fileNameWrapper = document.createElement('div');
+	    fileNameWrapper.className = 'file-name-wrapper';
+
+	    const fileName = document.createElement('input');
+	    fileName.className = 'file-name tree-name-input';
+	    fileName.value = entry.name;
+	    fileName.type = 'text';
+	    fileName.readOnly = true;
+	    fileName.tabIndex = -1;
+
+	    caret.style.visibility = 'hidden';
+	    caret.classList.add('tree-icon-hidden');
+	    header.appendChild(caret);
+	    fileNameWrapper.appendChild(fileName);
+	    header.appendChild(fileNameWrapper);
+
+	    const startEditing = () => {
+		    if (!entry.handle) return;
+		    setTreeItemEditingState(li, fileName, true);
+		    fileName.focus();
+		    fileName.select();
+	    };
+
+	    const openFile = async () => {
+		    if (!fileName.readOnly) return;
+		    try {
+			    state.currentFileId = entry.id;
+			    hooks.loadMarkdownFile(entry.contents, entry.name);
+		    } catch (error) {
+			    console.error('Failed to open file', error);
+		    }
+	    };
+
+	    li.draggable = true;
+	    li.addEventListener('dragstart', (ev) => {
+		    if (!entry.handle) return;
+		    state.dragPayload = { kind: 'file', name: entry.name, handle: entry.handle, parentHandle: entry.parentHandle ?? null };
+		    try {
+			    ev.dataTransfer?.setData('text/plain', JSON.stringify({ kind: 'file', name: entry.name }));
+		    } catch {
+			    // ignore clipboard/drag data errors
+		    }
+	    });
+
+	    li.addEventListener('dragover', (ev) => {
+		    ev.preventDefault();
+		    const x = (ev as DragEvent).clientX;
+		    const y = (ev as DragEvent).clientY;
+		    const element = document.elementFromPoint(x, y) as HTMLElement | null;
+		    const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
+
+		    const container = li.closest('.children') as HTMLElement | null;
+		    if (!container) {
+			    li.classList.remove('drop-target');
+			    return;
+		    }
+
+		    const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
+		    if (!parentFolderLi) return;
+
+		    const nearestChildren = element?.closest('.children') as HTMLElement | null;
+
+		    if (nearest === parentFolderLi) {
+			    parentFolderLi.classList.add('drop-target');
+			    return;
+		    }
+
+		    if (nearestChildren === container) {
+			    parentFolderLi.classList.add('drop-target');
+			    return;
+		    }
+
+		    parentFolderLi.classList.remove('drop-target');
+	    });
+
+	    li.addEventListener('dragleave', (ev) => {
+		    const x = (ev as DragEvent).clientX;
+		    const y = (ev as DragEvent).clientY;
+		    const element = document.elementFromPoint(x, y) as HTMLElement | null;
+		    const nearest = element?.closest?.('.tree-item') as HTMLElement | null;
+
+		    const container = li.closest('.children') as HTMLElement | null;
+		    if (!container) return;
+		    const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
+		    if (!parentFolderLi) return;
+
+		    const nearestChildren = element?.closest('.children') as HTMLElement | null;
+
+		    if (nearest === parentFolderLi) return;
+		    if (nearestChildren === container) return;
+		    parentFolderLi.classList.remove('drop-target');
+	    });
+
+	    li.addEventListener('drop', async (ev) => {
+		    ev.preventDefault();
+		    li.classList.remove('drop-target');
+		    if (!state.dragPayload) return;
+
+		    const container = li.closest('.children') as HTMLElement | null;
+		    if (!container) return;
+
+		    const parentFolderLi = container.closest('.tree-item') as HTMLElement | null;
+		    if (!parentFolderLi) return;
+
+		    const targetParent = entry.parentHandle;
+		    if (!targetParent) return;
+
+		    const fromParent = state.dragPayload.parentHandle;
+		    const draggedHandle = state.dragPayload.handle;
+
+		    try {
+			    if (!fromParent) return;
+			    if (state.dragPayload.kind === 'file') {
+				    await moveFile(fromParent, draggedHandle as FileSystemFileHandle, state.dragPayload.name, targetParent);
+			    } else {
+				    if (state.dragPayload.handle === entry.handle) return;
+				    await moveDirectory(fromParent, draggedHandle as FileSystemDirectoryHandle, state.dragPayload.name, targetParent);
+			    }
+			    await refreshFileTree(state, parent, hooks);
+		    } catch (error) {
+			    console.error('Failed to move entry', error);
+		    } finally {
+			    state.dragPayload = null;
+			    parentFolderLi.classList.remove('drop-target');
+		    }
+	    });
+
+	    const commitEditing = async () => {
+		    if (!entry.handle || !entry.parentHandle) return;
+		    if (fileName.readOnly) return;
+
+		    const requestedName = fileName.value;
+		    const normalizedRequestedName = normalizeMarkdownName(requestedName);
+		    if (!normalizedRequestedName || normalizedRequestedName === entry.name) {
+			    fileName.value = entry.name;
+			    setTreeItemEditingState(li, fileName, false);
+			    return;
+		    }
+
+		    try {
+			    const previousHandle = entry.handle;
+			    const result = await renameMarkdownFile(entry.parentHandle, previousHandle as FileSystemFileHandle, entry.name, requestedName);
+			    entry.handle = result.fileHandle;
+			    entry.name = result.name;
+			    fileName.value = result.name;
+
+			    if (state.currentFileHandle && state.currentFileHandle === previousHandle) {
+				    state.currentFileHandle = result.fileHandle;
+				    state.currentFileParentHandle = entry.parentHandle;
+				    state.currentFileName = result.name;
+				    if (state.noteTitleInput) state.noteTitleInput.value = result.name;
+			    }
+
+			    await refreshFileTree(state, parent, hooks);
+		    } catch (error) {
+			    console.error('Failed to rename file', error);
+			    fileName.value = entry.name;
+		    } finally {
+			    setTreeItemEditingState(li, fileName, false);
+		    }
+	    };
+
+	    li.addEventListener('click', () => {
+		    void openFile();
+	    });
+
+	    li.addEventListener('keydown', (event) => {
+		    if (event.key === 'Enter' || event.key === ' ') {
+			    event.preventDefault();
+			    void openFile();
+		    }
+	    });
+
+	    fileName.addEventListener('click', (event) => {
+		    event.stopPropagation();
+		    void openFile();
+	    });
+
+	    fileName.addEventListener('dblclick', (event) => {
+		    event.preventDefault();
+		    event.stopPropagation();
+		    startEditing();
+	    });
+
+	    fileName.addEventListener('blur', () => {
+		    void commitEditing();
+	    });
+
+	    fileName.addEventListener('keydown', (event) => {
+		    if (event.key === 'Enter') {
+			    event.preventDefault();
+			    fileName.blur();
+		    }
+
+		    if (event.key === 'Escape') {
+			    event.preventDefault();
+			    fileName.value = entry.name;
+			    setTreeItemEditingState(li, fileName, false);
+		    }
+	    });
+
+	    console.log("aaaa",header)
+	    li.appendChild(header);
+
+	    ul.appendChild(li);
+	    console.log(li)
     });
 
     parent.appendChild(ul);
+    console.log(parent)
 }

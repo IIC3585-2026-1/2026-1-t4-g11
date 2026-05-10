@@ -9,12 +9,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@automerge/automerge-repo": "^2.5.5",
+    "@automerge/automerge-repo-network-broadcastchannel": "^2.5.5",
+    "@automerge/automerge-repo-storage-indexeddb": "^2.5.5",
     "katex": "^0.16.45",
     "marked": "^5.1.2",
     "marked-extended-latex": "^1.1.0"
   },
   "devDependencies": {
     "typescript": "~6.0.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vite-plugin-wasm": "^3.6.0"
   }
 }

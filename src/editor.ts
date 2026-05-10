@@ -64,18 +64,17 @@ export function updatePreview(editorContent: HTMLTextAreaElement | null, preview
 export function loadMarkdownFile(
     state: EditorState,
     refs: EditorRefs,
-    md: string,
-    filename?: string,
 ) {
     const vaultSelected = document.getElementById('vault-selected') as HTMLElement | null;
     if (vaultSelected) vaultSelected.style.display = 'none';
 
-    if (refs.noteTitleInput && filename) refs.noteTitleInput.value = filename;
-    if (filename) state.currentFileName = filename;
+    const note = state.vaultHandle.doc().notes.find(n => n.id == state.currentFileId);
+
+    if (refs.noteTitleInput && note.name) refs.noteTitleInput.value = note.name;
     setNoteTitleState(refs.noteTitleInput, false);
 
     if (refs.editorContent) {
-        refs.editorContent.value = md;
+        refs.editorContent.value = note.contents;
         updatePreview(refs.editorContent, refs.previewContent);
     }
 }
@@ -116,20 +115,20 @@ export async function createMarkdownFile(
         if (state.saveTimer) window.clearTimeout(state.saveTimer);
         await saveCurrentFile(state, refs.editorContent);
 
-        if (!state.folderHandle) {
-            state.folderHandle = await window.showDirectoryPicker();
-        }
+        if (!state.vaultHandle) return;
 
-        if (!state.folderHandle) return;
-
-        const filename = await makeUniqueMarkdownFilename(state.folderHandle, 'Nueva nota');
-        const fileHandle = await createNewFileWithContent(state.folderHandle, filename, '');
-        if (!fileHandle) return;
-
-        state.currentFileHandle = fileHandle;
-        state.currentFileParentHandle = state.folderHandle;
-        loadMarkdownFile(state, refs, '', filename);
+	const newNote = {
+		id: crypto.randomUUID(),
+		name: "New Note",
+		contents: "Hello, world!"
+	}
+        state.currentFileId = newNote.id;
+	state.vaultHandle.change(vault => {
+		vault.notes.push(newNote)
+	})
+        loadMarkdownFile(state, refs, newNote.contents, newNote.name);
         setNoteTitleState(refs.noteTitleInput, true);
+
         refs.noteTitleInput?.focus();
         refs.noteTitleInput?.select();
         await refreshFileTree();
