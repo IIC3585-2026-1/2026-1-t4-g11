@@ -41,6 +41,7 @@
     --current: #6272A4;
     --selection: #2d2e39;
     --text: #f8f8f2;
+    --text-secondary: #a0a0a0;
     --comment: #6272A4;
     --red: #ff5555;
     --orange: #ffb86c;
@@ -155,5 +156,10 @@ button {
   'wght' 400,
   'GRAD' 0,
   'opsz' 24
+}
+
+.toolbar-icon, .filebar-icon, 
+.vault-icon, .caret {
+    color: var(--text-secondary);
 }
 
