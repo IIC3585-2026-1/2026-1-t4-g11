@@ -214,8 +214,11 @@ async function populateRecentNotes() {
 }
 
 const toggleViewButton = document.querySelector('#toggle-view') as HTMLButtonElement | null;
+
 if (toggleViewButton) {
     toggleViewButton.addEventListener('click', () => {
+        if (!appState.currentFileHandle) return;
+
         const editorPane = document.getElementById('editor-pane') as HTMLElement | null;
         const previewPane = document.getElementById('preview-pane') as HTMLElement | null;
         if (!editorPane || !previewPane) return;
