@@ -2,6 +2,7 @@ import './styles/main.css';
 import {
     createMarkdownFile,
     loadMarkdownFile,
+    setNoteTitleState,
     renameCurrentFile,
     saveCurrentFile,
     updatePreview,
@@ -31,6 +32,12 @@ const sidebarToggle = document.querySelector('#sidebar-toggle') as HTMLInputElem
 const toggleBarsButton = document.querySelector('#toggle-sidebar') as HTMLElement | null;
 const collapseFilesButton = document.querySelector('#collapse-files') as HTMLButtonElement | null;
 const collapseFilesIcon = collapseFilesButton?.querySelector('.material-symbols-outlined') as HTMLElement | null;
+const optionsButton = document.querySelector('#options') as HTMLButtonElement | null;
+const optionsMenu = document.querySelector('#options-menu') as HTMLElement | null;
+const deleteNoteButton = document.querySelector('#delete-note') as HTMLButtonElement | null;
+const optionsNewFileTodayButton = document.querySelector('#options-new-file-today') as HTMLButtonElement | null;
+const optionsToggleViewButton = document.querySelector('#options-toggle-view') as HTMLButtonElement | null;
+const optionsCollapseFilesButton = document.querySelector('#options-collapse-files') as HTMLButtonElement | null;
 
 const refs: EditorRefs = {
     editorContent,
@@ -52,6 +59,8 @@ const treeHooks: TreeRenderHooks = {
     setTreeItemEditingState,
     loadMarkdownFile: (md, filename) => loadMarkdownFile(appState, refs, md, filename),
 };
+
+let recentNotesLoading = false;
 
 async function syncFileTree() {
     await refreshFileTree(appState, filebarFiles, treeHooks);
@@ -77,6 +86,19 @@ function updateSidebarToggleIcon() {
     const isMobile = isMobileSidebarMode();
     const isOpen = isMobile ? !!sidebarToggle?.checked : document.getElementById('sidebar')?.style.display !== 'none';
     icon.textContent = isOpen ? 'left_panel_close' : 'left_panel_open';
+}
+
+function setOptionsMenuOpen(isOpen: boolean) {
+    if (!optionsMenu || !optionsButton) return;
+
+    optionsMenu.hidden = !isOpen;
+    optionsButton.setAttribute('aria-expanded', String(isOpen));
+}
+
+function toggleOptionsMenu() {
+    if (!optionsMenu) return;
+
+    setOptionsMenuOpen(optionsMenu.hasAttribute('hidden'));
 }
 
 function setEditorPaneVisible(isEditorVisible: boolean) {
@@ -184,54 +206,58 @@ function updateEditorView() {
 
 async function populateRecentNotes() {
     const recentEl = document.getElementById('recent-notes') as HTMLUListElement | null;
-    if (!recentEl || !appState.folderHandle) return;
+    if (!recentEl || !appState.folderHandle || recentNotesLoading || recentEl.children.length) return;
 
-    if (recentEl.children.length) return;
+    recentNotesLoading = true;
 
-    const tree = await getTree(appState.folderHandle);
-    const files: Array<{ name: string; handle: FileSystemFileHandle }> = [];
-    function walk(entries: typeof tree) {
-        for (const e of entries) {
-            if (e.kind === 'file' && e.handle) files.push({ name: e.name, handle: e.handle as FileSystemFileHandle });
-            if (e.children && e.children.length) walk(e.children);
-        }
-    }
-    walk(tree);
-
-    // load lastModified for each file
-    const withTimes = await Promise.all(files.map(async (f) => {
-        try {
-            const file = await f.handle.getFile();
-            return { ...f, lastModified: file.lastModified };
-        } catch {
-            return { ...f, lastModified: 0 } as any;
-        }
-    }));
-
-    withTimes.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
-    const top = withTimes.slice(0, 5);
-
-    for (const t of top) {
-        const li = document.createElement('li');
-        li.className = 'recent-note-item';
-        li.style.padding = '6px 8px';
-        li.style.cursor = 'pointer';
-        const date = t.lastModified ? new Date(t.lastModified).toLocaleString() : '';
-        li.textContent = `${t.name} ${date ? '— ' + date : ''}`;
-        li.addEventListener('click', async () => {
-            try {
-                const file = await t.handle.getFile();
-                const text = await file.text();
-                treeHooks.loadMarkdownFile(text, t.name);
-                const preview = document.getElementById('preview-pane') as HTMLElement | null;
-                const editorP = document.getElementById('editor-pane') as HTMLElement | null;
-                if (preview) preview.style.display = 'none';
-                if (editorP) editorP.style.display = 'flex';
-            } catch (error) {
-                console.error('Failed to open recent note', error);
+    try {
+        const tree = await getTree(appState.folderHandle);
+        const files: Array<{ name: string; handle: FileSystemFileHandle }> = [];
+        function walk(entries: typeof tree) {
+            for (const e of entries) {
+                if (e.kind === 'file' && e.handle) files.push({ name: e.name, handle: e.handle as FileSystemFileHandle });
+                if (e.children && e.children.length) walk(e.children);
             }
-        });
-        recentEl.appendChild(li);
+        }
+        walk(tree);
+
+        // load lastModified for each file
+        const withTimes = await Promise.all(files.map(async (f) => {
+            try {
+                const file = await f.handle.getFile();
+                return { ...f, lastModified: file.lastModified };
+            } catch {
+                return { ...f, lastModified: 0 } as any;
+            }
+        }));
+
+        withTimes.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
+        const top = withTimes.slice(0, 5);
+
+        for (const t of top) {
+            const li = document.createElement('li');
+            li.className = 'recent-note-item';
+            li.style.padding = '6px 8px';
+            li.style.cursor = 'pointer';
+            const date = t.lastModified ? new Date(t.lastModified).toLocaleString() : '';
+            li.textContent = `${t.name} ${date ? '— ' + date : ''}`;
+            li.addEventListener('click', async () => {
+                try {
+                    const file = await t.handle.getFile();
+                    const text = await file.text();
+                    treeHooks.loadMarkdownFile(text, t.name);
+                    const preview = document.getElementById('preview-pane') as HTMLElement | null;
+                    const editorP = document.getElementById('editor-pane') as HTMLElement | null;
+                    if (preview) preview.style.display = 'none';
+                    if (editorP) editorP.style.display = 'flex';
+                } catch (error) {
+                    console.error('Failed to open recent note', error);
+                }
+            });
+            recentEl.appendChild(li);
+        }
+    } finally {
+        recentNotesLoading = false;
     }
 }
 
@@ -255,6 +281,61 @@ if (toggleBarsButton) {
         updateSidebarState();
     });
 }
+
+if (optionsButton) {
+    optionsButton.setAttribute('aria-haspopup', 'menu');
+    optionsButton.setAttribute('aria-expanded', 'false');
+    optionsButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        toggleOptionsMenu();
+    });
+}
+
+if (deleteNoteButton) {
+    deleteNoteButton.addEventListener('click', async (ev) => {
+        ev.stopPropagation();
+        setOptionsMenuOpen(false);
+
+        if (!appState.currentFileHandle || !appState.currentFileParentHandle || !appState.currentFileName) return;
+
+        try {
+            await appState.currentFileParentHandle.removeEntry(appState.currentFileName);
+
+            // clear current file state
+            appState.currentFileHandle = null;
+            appState.currentFileParentHandle = null;
+            appState.currentFileName = null;
+
+            // clear editor UI
+            if (refs.editorContent) {
+                refs.editorContent.value = '';
+                updatePreview(refs.editorContent, refs.previewContent);
+            }
+            if (refs.noteTitleInput) {
+                refs.noteTitleInput.value = '';
+                setNoteTitleState(refs.noteTitleInput, false);
+            }
+
+            await refreshTreeOnly();
+            updateEditorView();
+        } catch (error) {
+            console.error('Failed to delete note', error);
+        }
+    });
+}
+
+document.addEventListener('click', (event) => {
+    if (!optionsMenu || !optionsButton) return;
+    const target = event.target as Node | null;
+    if (target && (optionsMenu.contains(target) || optionsButton.contains(target))) return;
+    setOptionsMenuOpen(false);
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        setOptionsMenuOpen(false);
+    }
+});
 
 if (sidebarToggle) {
     sidebarToggle.addEventListener('change', () => {
