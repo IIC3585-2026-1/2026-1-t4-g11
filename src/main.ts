@@ -73,7 +73,7 @@ const repo = new Repo({
 });
 
 async function vaultDocChangeHandler() {
-  await refreshFileTree();
+  await refreshFileTree(appState, filebarFiles, treeHooks);
 }
 
 const locationHash = document.location.hash.substring(1);
@@ -395,6 +395,14 @@ document.addEventListener("dragover", (event) => {
   }
 
   nearest.classList.add("drop-target");
+});
+
+document.getElementById("change-vault").addEventListener("click", async () => {
+  repo.delete(appState.vaultUrl);
+  appState.vaultHandle = null;
+  appState.vaultUrl = null;
+  document.location.hash = "";
+  syncFileTree();
 });
 
 if (noteTitleInput) {
