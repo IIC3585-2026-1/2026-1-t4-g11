@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { mangle } from "marked-mangle";
 import Katex from "katex";
 import extendedLatex from "marked-extended-latex";
 import {
@@ -7,6 +8,8 @@ import {
   renameMarkdownFile,
 } from "./file_tree";
 
+marked.use({ headerIds: false });
+marked.use(mangle());
 const previewRenderer = new marked.Renderer();
 
 export type EditorState = {

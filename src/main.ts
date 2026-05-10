@@ -17,9 +17,15 @@ import {
   type TreeState,
 } from "./file_tree";
 
-import { DocHandle, Repo, type AutomergeUrl } from "@automerge/automerge-repo";
+import {
+  DocHandle,
+  isValidAutomergeUrl,
+  Repo,
+  type AutomergeUrl,
+} from "@automerge/automerge-repo";
 import { BroadcastChannelNetworkAdapter } from "@automerge/automerge-repo-network-broadcastchannel";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
+import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 
 const editorContent = document.getElementById(
   "editor-input",
@@ -62,20 +68,25 @@ const treeHooks: TreeRenderHooks = {
 };
 
 const repo = new Repo({
-  network: [new BroadcastChannelNetworkAdapter()],
+  network: [new BrowserWebSocketClientAdapter("wss://sync.automerge.org")],
   storage: new IndexedDBStorageAdapter(),
 });
 
-function vaultDocChangeHandler(handle: DocHandler) {
-  console.log("change", handle.doc());
-  syncFileTree();
+async function vaultDocChangeHandler() {
+  await refreshFileTree();
 }
 
-appState.vaultUrl = null; //localStorage.getItem("root-vault-url") as AutomergeUrl | null;
+const locationHash = document.location.hash.substring(1);
+if (isValidAutomergeUrl(locationHash)) {
+  appState.vaultUrl = locationHash;
+} else {
+  appState.vaultUrl = localStorage.getItem("root-vault-url");
+}
 
 if (appState.vaultUrl) {
+  document.location.hash = appState.vaultUrl;
   appState.vaultHandle = await repo.find(appState.vaultUrl);
-  appState.vaultHandle.onchange = vaultDocChangeHandler;
+  appState.vaultHandle.addListener("change", vaultDocChangeHandler);
 }
 
 const syncFileTree = async () => {
@@ -143,13 +154,11 @@ function bindCreateVaultButton() {
   btnEl.onclick = async () => {
     try {
       appState.vaultHandle = repo.create({
-        notes: [{ id: 1, name: "test", contents: "aaa" }],
+        notes: [],
       });
-      console.log(appState.vaultHandle);
-      appState.vaultHandle.onchange = vaultDocChangeHandler;
+      appState.vaultHandle.addListener("change", vaultDocChangeHandler);
       appState.vaultUrl = appState.vaultHandle.url;
       localStorage.setItem("root-vault-url", appState.vaultUrl);
-      appState.vaultHandle.change((doc) => (doc.test = "b"));
       await syncFileTree();
     } catch (error) {
       console.error("Failed to create vault", error);
@@ -433,5 +442,4 @@ if (editorContent) {
 
 updatePreview(editorContent, previewContent);
 
-// initialize editor view based on whether a vault is selected
-updateEditorView();
+await syncFileTree();
