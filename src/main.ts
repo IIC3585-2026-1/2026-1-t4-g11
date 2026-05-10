@@ -271,6 +271,18 @@ window.addEventListener('resize', syncSidebarVisibilityForViewport);
 
 bindCreateVaultButton();
 
+async function createNewNote() {
+    await createMarkdownFile(appState, refs, refreshTreeOnly);
+}
+
+function getTodayTitle() {
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear());
+    return `${day}-${month}-${year}`;
+}
+
 document.querySelector('#get-vault')!.addEventListener('click', async () => {
     try {
         appState.folderHandle = await window.showDirectoryPicker();
@@ -282,7 +294,17 @@ document.querySelector('#get-vault')!.addEventListener('click', async () => {
 });
 
 document.querySelector('#new-file')?.addEventListener('click', () => {
-    void createMarkdownFile(appState, refs, refreshTreeOnly);
+    void createNewNote();
+});
+
+document.querySelector('#new-file-today')?.addEventListener('click', () => {
+    void (async () => {
+        await createNewNote();
+        if (!appState.currentFileHandle || !noteTitleInput) return;
+
+        noteTitleInput.value = getTodayTitle();
+        await renameCurrentFile(appState, refs, noteTitleInput.value, syncFileTree);
+    })();
 });
 
 document.querySelector('#new-folder')?.addEventListener('click', async () => {
