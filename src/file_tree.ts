@@ -304,7 +304,6 @@ export function renderTree(
   ul.className = "tree-list";
 
   entries.notes.forEach((entry) => {
-    console.log(entry);
     const li = document.createElement("li");
     li.className = "tree-item";
     li.tabIndex = 0;
@@ -555,13 +554,10 @@ export function renderTree(
       }
     });
 
-    console.log("aaaa", header);
     li.appendChild(header);
 
     ul.appendChild(li);
-    console.log(li);
   });
 
   parent.appendChild(ul);
-  console.log(parent);
 }

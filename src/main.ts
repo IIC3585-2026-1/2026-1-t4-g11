@@ -23,7 +23,6 @@ import {
   Repo,
   type AutomergeUrl,
 } from "@automerge/automerge-repo";
-import { BroadcastChannelNetworkAdapter } from "@automerge/automerge-repo-network-broadcastchannel";
 import { IndexedDBStorageAdapter } from "@automerge/automerge-repo-storage-indexeddb";
 import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network-websocket";
 
@@ -406,20 +405,16 @@ document.getElementById("change-vault").addEventListener("click", async () => {
 });
 
 if (noteTitleInput) {
-  noteTitleInput.addEventListener("blur", () => {
-    if (!noteTitleInput.readOnly) {
-      void renameCurrentFile(
-        appState,
-        refs,
-        noteTitleInput.value,
-        syncFileTree,
-      );
-    }
-  });
-
   noteTitleInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
+      if (!noteTitleInput.readOnly && appState.currentFileId) {
+	    appState.vaultHandle.change(vault => {
+		    const note = vault.notes.find(n => n.id === appState.currentFileId);
+		    note.name = event.target.value;
+	    });
+      }
+
       noteTitleInput.blur();
     }
 
