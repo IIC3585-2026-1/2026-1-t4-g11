@@ -55,6 +55,8 @@
   font: inherit;
   outline: none;
   padding-right: 0.5rem;
+
+  font-weight: 500;
 }
 .caret {
   display: flex;
@@ -70,7 +72,7 @@
 }
 .caret:focus { outline: 1px dashed var(--accent); }
 .tree-name, .file-name { 
-    color: var(--text); 
+    color: #a0a0a0; 
     display: inline;
     text-overflow: ellipsis;
     overflow: hidden;
