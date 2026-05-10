@@ -94,14 +94,14 @@
   flex-shrink: 0;
 }
 
-#filebar-files{
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding-inline: 1rem;
-    flex: 1;
-    overflow-y: auto;
-    margin: 0;
+#filebar-files {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-inline: 1rem;
+  flex: 1;
+  overflow-y: auto;
+  margin: 0;
 }
 
 #filebar-footer{

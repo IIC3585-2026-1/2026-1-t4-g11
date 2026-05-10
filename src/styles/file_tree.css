@@ -38,7 +38,6 @@
   cursor: pointer;
 }
 
-
 .file-name-wrapper {
   display: flex;
   align-items: center;
@@ -95,12 +94,15 @@
   margin-left: 9px;
   padding-left: 0.8rem;
 }
-.children.collapsed { display: none; }
-.children.expanded { 
-    display: block; 
-    position: relative; }
+.children.collapsed {
+  display: none;
+}
+.children.expanded {
+  display: block;
+  position: relative;
+}
 .children.expanded::before {
-  content: '';
+  content: "";
   position: absolute;
   left: 0.15rem;
   top: 0;

@@ -2,15 +2,25 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/src/assets/coal.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Carbon</title>
+    <title>G11 — Carbon</title>
+    <meta name="description" content="Coal: collaborative note taker" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/coal.svg" sizes="any" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <meta name="theme-color" content="#ffffff" />
   </head>
   <body>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
     <div id="app">
         <input id="sidebar-toggle" class="sidebar-toggle" type="checkbox" aria-label="Toggle sidebar" />
         <div id="sidebar">
@@ -73,31 +83,93 @@
                     </div>
                 </div>
             </div>
-            <div id="editor-content">
-                <div id="vault-empty" class="vault-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;">
-                    <img id="vault-icon-empty" src="/src/assets/coal.svg" alt="Vault icon"  />
-                    <div style="margin-bottom:12px">No se encontro una boveda</div>
-                    <button id="create-vault" class="text-btn">Crea una boveda</button>
-                </div>
-                <div id="vault-selected" style="display:none;">
-                    <img id="vault-icon-selected" src="/src/assets/coal.svg" alt="Vault icon" />
-                    <span id="vault-name-selected-pane" class="vault-name"></span>
-                    <span>Notas recientes</span>
-                    <ul id="recent-notes"></ul>
-                    <div>
-                        <button id="new-note-vault" class="text-btn">Nueva nota</button>
-                        <button id="change-vault" class="text-btn secondary">Cambiar boveda</button>
-                    </div>
-                </div>
-                <div class="pane" id="editor-pane" style="display:none;">
-                    <textarea id="editor-input" aria-label="Markdown editor" placeholder="Write your markdown here..."></textarea>
-                </div>
-                <div class="pane" id="preview-pane" style="display:none;">
-                    <div id="preview-content"></div>
-                </div>
-                <label id="sidebar-backdrop" for="sidebar-toggle" aria-hidden="true"></label>
-            </div>
+            <button id="get-vault" class="icon-btn">
+              <span class="material-symbols-outlined">refresh</span>
+            </button>
+            <button id="settings" class="icon-btn">
+              <span class="material-symbols-outlined">settings</span>
+            </button>
+          </div>
         </div>
+      </div>
+      <div id="editor">
+        <div id="editor-header">
+          <button
+            id="toggle-sidebar"
+            class="icon-btn"
+            aria-label="Toggle sidebar"
+          >
+            <span class="material-symbols-outlined">left_panel_close</span>
+          </button>
+          <input
+            id="note-title"
+            class="editable-name inactive"
+            type="text"
+            value="Nueva pestaña"
+            aria-label="Note title"
+          />
+          <div id="editor-tools">
+            <button id="toggle-view" class="icon-btn">
+              <span class="material-symbols-outlined">edit</span>
+            </button>
+            <button id="save-note" class="icon-btn">
+              <span class="material-symbols-outlined">more_vert</span>
+            </button>
+          </div>
+        </div>
+        <div id="editor-content">
+          <div
+            id="vault-empty"
+            class="vault-empty"
+            style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              height: 100%;
+            "
+          >
+            <img
+              id="vault-icon-empty"
+              src="/src/assets/coal.svg"
+              alt="Vault icon"
+            />
+            <div style="margin-bottom: 12px">No se encontro una boveda</div>
+            <button id="create-vault" class="text-btn">Crea una boveda</button>
+          </div>
+          <div id="vault-selected" style="display: none">
+            <img
+              id="vault-icon-selected"
+              src="/src/assets/coal.svg"
+              alt="Vault icon"
+            />
+            <span id="vault-name-selected-pane" class="vault-name"></span>
+            <span>Notas recientes</span>
+            <ul id="recent-notes"></ul>
+            <div>
+              <button id="new-note-vault" class="text-btn">Nueva nota</button>
+              <button id="change-vault" class="text-btn secondary">
+                Cambiar boveda
+              </button>
+            </div>
+          </div>
+          <div class="pane" id="editor-pane" style="display: none">
+            <textarea
+              id="editor-input"
+              aria-label="Markdown editor"
+              placeholder="Write your markdown here..."
+            ></textarea>
+          </div>
+          <div class="pane" id="preview-pane" style="display: none">
+            <div id="preview-content"></div>
+          </div>
+          <label
+            id="sidebar-backdrop"
+            for="sidebar-toggle"
+            aria-hidden="true"
+          ></label>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
