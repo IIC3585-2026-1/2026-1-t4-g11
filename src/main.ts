@@ -27,6 +27,7 @@ const noteTitleInput = document.getElementById('note-title') as HTMLInputElement
 
 const filebarFiles = document.getElementById('filebar-files') as HTMLElement | null;
 const app = document.getElementById('app') as HTMLElement | null;
+const sidebarToggle = document.querySelector('#sidebar-toggle') as HTMLInputElement | null;
 const toggleBarsButton = document.querySelector('#toggle-sidebar') as HTMLElement | null;
 const collapseFilesButton = document.querySelector('#collapse-files') as HTMLButtonElement | null;
 const collapseFilesIcon = collapseFilesButton?.querySelector('.material-symbols-outlined') as HTMLElement | null;
@@ -69,6 +70,15 @@ function updateCollapseFilesButtonIcon() {
     collapseFilesIcon.textContent = hasExpandedFolders(filebarFiles) ? 'collapse_all' : 'expand_all';
 }
 
+function updateSidebarToggleIcon() {
+    const icon = document.getElementById('toggle-sidebar-icon');
+    if (!icon) return;
+
+    const isMobile = isMobileSidebarMode();
+    const isOpen = isMobile ? !!sidebarToggle?.checked : document.getElementById('sidebar')?.style.display !== 'none';
+    icon.textContent = isOpen ? 'left_panel_close' : 'left_panel_open';
+}
+
 function setEditorPaneVisible(isEditorVisible: boolean) {
     const editorPane = document.getElementById('editor-pane') as HTMLElement | null;
     const previewPane = document.getElementById('preview-pane') as HTMLElement | null;
@@ -90,6 +100,8 @@ function syncSidebarVisibilityForViewport() {
     if (isMobileSidebarMode()) {
         sidebar.style.removeProperty('display');
     }
+
+    updateSidebarToggleIcon();
 }
 
 function updateSidebarState() {
@@ -101,13 +113,14 @@ function updateSidebarState() {
     if (!toggleBarsButton) return;
 
     if (isMobileSidebarMode()) {
-        // Let the checkbox + CSS drive sidebar visibility on narrow aspect ratios.
+        if (sidebarToggle) {
+            sidebarToggle.checked = !sidebarToggle.checked;
+        }
+        updateSidebarToggleIcon();
         return;
     }
 
     const isHidden = sidebar.style.display === 'none';
-
-    const icon = document.getElementById('toggle-sidebar-icon');
 
     if (isHidden) {
         sidebar.style.display = 'flex';
@@ -115,12 +128,7 @@ function updateSidebarState() {
         sidebar.style.display = 'none';
     }
 
-    if (icon){
-        icon.textContent = isHidden ? 'left_panel_close' : 'left_panel_open';
-    }
-
-    
-
+    updateSidebarToggleIcon();
 }
 
 function bindCreateVaultButton() {
@@ -245,6 +253,12 @@ if (toggleViewButton) {
 if (toggleBarsButton) {
     toggleBarsButton.addEventListener('click', () => {
         updateSidebarState();
+    });
+}
+
+if (sidebarToggle) {
+    sidebarToggle.addEventListener('change', () => {
+        updateSidebarToggleIcon();
     });
 }
 
@@ -402,6 +416,7 @@ if (editorContent) {
 
 updatePreview(editorContent, previewContent);
 updateCollapseFilesButtonIcon();
+updateSidebarToggleIcon();
 
 // initialize editor view based on whether a vault is selected
 updateEditorView();
