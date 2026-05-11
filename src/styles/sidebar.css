@@ -74,7 +74,7 @@
   flex-direction: column;
   gap: 0.5rem;
   border-right: 1px solid var(--grey);
-  max-width: 15vw;
+  width: clamp(10rem, 15vw, 15vw);
 }
 
 @media (aspect-ratio < 3/5) {
