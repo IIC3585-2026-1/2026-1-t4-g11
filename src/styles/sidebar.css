@@ -11,7 +11,7 @@
   display: none;
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #sidebar {
     position: fixed;
     top: 0;
@@ -59,7 +59,7 @@
   border-right: 1px solid var(--grey);
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #toolbar {
     flex-direction: row;
     border-right: none;
@@ -74,10 +74,10 @@
   flex-direction: column;
   gap: 0.5rem;
   border-right: 1px solid var(--grey);
-  max-width: 15vw;
+  width: clamp(10rem, 15vw, 15vw);
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #filebar {
     border-right: none;
     max-width: none;
@@ -92,6 +92,13 @@
   gap: 0.5rem;
   padding: 1rem 1rem;
   flex-shrink: 0;
+  justify-content: center;
+}
+
+@media (aspect-ratio < 3/5) {
+  #filebar-buttons {
+    justify-content: flex-start;
+  }
 }
 
 #filebar-files {
