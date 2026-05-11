@@ -196,8 +196,7 @@ function renderEditor(state, refs) {
       ) as HTMLElement | null;
       if (vaultSelected) vaultSelected.style.display = "flex";
 
-      document.getElementById("editor-pane").style.display =
-        "none";
+      document.getElementById("editor-pane").style.display = "none";
       document.getElementById("preview-pane").style.display = "none";
 
       const vaultName = appState.vaultHandle.doc().name || "Vault";
@@ -206,6 +205,9 @@ function renderEditor(state, refs) {
       vaultNameElements.forEach((element) => {
         element.textContent = vaultName;
       });
+
+      noteTitleInput.value = appState.vaultHandle.doc().name;
+      noteTitleInput.placeholder = appState.vaultHandle.doc().name;
       // TODO populateRecentNotes();
     }
   }
@@ -279,7 +281,7 @@ async function populateRecentNotes() {
 const toggleViewButton = document.querySelector(
   "#toggle-view",
 ) as HTMLButtonElement | null;
-if (toggleViewButton) {
+if (toggleViewButton && appState.currentFileId) {
   toggleViewButton.addEventListener("click", () => {
     const editorPane = document.getElementById(
       "editor-pane",
@@ -403,35 +405,38 @@ document.getElementById("change-vault")?.addEventListener("click", () => {
 });
 
 document.getElementById("delete-note")?.addEventListener("click", () => {
-	if (!appState.vaultHandle) return;
-	if (!appState.currentFileId) return;
+  if (!appState.vaultHandle) return;
+  if (!appState.currentFileId) return;
 
-	appState.vaultHandle.change(vault => {
-		const index = vault.notes.findIndex(n => n.id === appState.currentFileId)
-		vault.notes.deleteAt(index);
-	})
-	appState.currentFileId = null;
+  appState.vaultHandle.change((vault) => {
+    const index = vault.notes.findIndex((n) => n.id === appState.currentFileId);
+    vault.notes.deleteAt(index);
+  });
+  appState.currentFileId = null;
 
-	renderPage();
-})
+  renderPage();
+});
 
 if (noteTitleInput) {
   noteTitleInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      if (!noteTitleInput.readOnly && appState.currentFileId) {
+      if (appState.currentFileId) {
         appState.vaultHandle.change((vault) => {
           const note = vault.notes.find((n) => n.id === appState.currentFileId);
           note.name = event.target.value;
         });
+      } else {
+        appState.vaultHandle.change((vault) => {
+          vault.name = event.target.value;
+        });
       }
 
       noteTitleInput.blur();
-    }
-
-    if (event.key === "Escape" && appState.currentFileName) {
+      renderPage();
+    } else if (event.key === "Escape") {
       event.preventDefault();
-      noteTitleInput.value = appState.currentFileName;
+      noteTitleInput.value = noteTitleInput.placeholder;
       noteTitleInput.blur();
     }
   });

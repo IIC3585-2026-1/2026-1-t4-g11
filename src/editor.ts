@@ -32,7 +32,7 @@ export function setNoteTitleState(
 ) {
   if (!noteTitleInput) return;
 
-  noteTitleInput.readOnly = !isActive;
+  //noteTitleInput.readOnly = !isActive;
   noteTitleInput.classList.toggle("active", isActive);
   noteTitleInput.classList.toggle("inactive", !isActive);
 }
@@ -70,7 +70,11 @@ export function loadMarkdownFile(state: EditorState, refs: EditorRefs) {
     .doc()
     .notes.find((n) => n.id == state.currentFileId);
 
-  if (refs.noteTitleInput && note.name) refs.noteTitleInput.value = note.name;
+  if (refs.noteTitleInput && note.name) {
+    refs.noteTitleInput.value = note.name;
+    refs.noteTitleInput.placeholder = note.name;
+  }
+
   setNoteTitleState(refs.noteTitleInput, false);
 
   if (refs.editorContent) {
