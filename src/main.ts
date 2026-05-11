@@ -20,6 +20,34 @@ import {
     type TreeState,
 } from './file_tree';
 
+import { getToken, onMessage } from "firebase/messaging"
+import { messaging } from "./firebase"
+
+async function initNotifications() {
+  const permission = await Notification.requestPermission()
+
+  if (permission === "granted") {
+    const token = await getToken(messaging, {
+      vapidKey: "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY"
+    })
+
+    console.log("FCM TOKEN:", token)
+  }
+}
+
+onMessage(messaging, (payload) => {
+  console.log("Mensaje recibido con la app abierta:", payload)
+
+  const title = payload.notification?.title ?? "Notificación"
+  const body = payload.notification?.body ?? ""
+
+  new Notification(title, {
+    body
+  })
+})
+
+initNotifications()
+
 const editorContent = document.getElementById('editor-input') as HTMLTextAreaElement | null;
 if (editorContent) editorContent.spellcheck = true;
 
