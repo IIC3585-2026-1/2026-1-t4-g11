@@ -30,16 +30,37 @@ const editorContent = document.getElementById(
 import { getToken, onMessage } from "firebase/messaging";
 import { messaging } from "./firebase";
 
+// URL del servidor de push (cambiar si se deploya)
+const PUSH_SERVER = import.meta.env.VITE_PUSH_SERVER ?? "http://localhost:3000";
+const VAPID_PUBLIC = "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY";
+
 async function initNotifications() {
   const permission = await Notification.requestPermission();
 
   if (permission === "granted") {
-    const token = await getToken(messaging, {
-      vapidKey:
-        "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY",
-    });
-
+    const token = await getToken(messaging, { vapidKey: VAPID_PUBLIC });
     console.log("FCM TOKEN:", token);
+
+    // Registrar suscripción directa en nuestro servidor (para demo push)
+    try {
+      const swReg = await navigator.serviceWorker.register("/push-sw.js", { scope: "/push-sw-scope/" });
+      await navigator.serviceWorker.ready;
+      let sub = await swReg.pushManager.getSubscription();
+      if (!sub) {
+        sub = await swReg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: VAPID_PUBLIC,
+        });
+      }
+      await fetch(`${PUSH_SERVER}/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sub),
+      });
+      console.log("✅ Suscrito al servidor de push");
+    } catch (err) {
+      console.warn("Push server no disponible (demo offline):", err);
+    }
   }
 }
 
