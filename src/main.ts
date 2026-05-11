@@ -580,6 +580,25 @@ document.getElementById("delete-note")?.addEventListener("click", () => {
 });
 
 if (noteTitleInput) {
+  noteTitleInput.addEventListener("click", () => {
+    noteTitleInput.classList.remove("inactive");
+    noteTitleInput.select();
+  });
+
+  noteTitleInput.addEventListener("blur", () => {
+    noteTitleInput.classList.add("inactive");
+    if (appState.currentFileId) {
+    appState.vaultHandle?.change((vault) => {
+      const note = vault.notes.find((n) => n.id === appState.currentFileId);
+      if (note) note.name = noteTitleInput.value;
+    });
+  } else if (appState.vaultHandle) {
+    appState.vaultHandle.change((vault) => {
+      vault.name = noteTitleInput.value;
+    });
+  }
+  renderPage();
+  });
   noteTitleInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
