@@ -20,7 +20,6 @@
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
-  position: relative;
 }
 
 .options-menu {
@@ -75,6 +74,10 @@
   justify-content: center;
   text-align: center;
   outline: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 #editor-content {
