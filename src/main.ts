@@ -16,7 +16,6 @@ import {
 } from "./file_tree";
 
 import {
-  DocHandle,
   isValidAutomergeUrl,
   Repo,
   type AutomergeUrl,
@@ -53,7 +52,6 @@ const refs: EditorRefs = {
 const appState: EditorState & TreeState = {
   vaultHandle: null,
   currentFileId: null,
-  saveTimer: undefined,
   dragPayload: null,
   noteTitleInput,
 };
@@ -198,8 +196,8 @@ function renderEditor(state, refs) {
       ) as HTMLElement | null;
       if (vaultSelected) vaultSelected.style.display = "flex";
 
-      const editorPane = (document.getElementById("editor-pane").style.display =
-        "none");
+      document.getElementById("editor-pane").style.display =
+        "none";
       document.getElementById("preview-pane").style.display = "none";
 
       const vaultName = appState.vaultHandle.doc().name || "Vault";
@@ -403,6 +401,19 @@ document.getElementById("change-vault")?.addEventListener("click", () => {
   document.location.hash = "";
   renderPage();
 });
+
+document.getElementById("delete-note")?.addEventListener("click", () => {
+	if (!appState.vaultHandle) return;
+	if (!appState.currentFileId) return;
+
+	appState.vaultHandle.change(vault => {
+		const index = vault.notes.findIndex(n => n.id === appState.currentFileId)
+		vault.notes.deleteAt(index);
+	})
+	appState.currentFileId = null;
+
+	renderPage();
+})
 
 if (noteTitleInput) {
   noteTitleInput.addEventListener("keydown", (event) => {
