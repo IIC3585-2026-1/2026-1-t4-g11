@@ -405,6 +405,8 @@ function getTodayTitle() {
 }
 
 document.querySelector("#new-file-today")?.addEventListener("click", () => {
+  const vaultName = appState.vaultHandle?.doc().name;
+  sendNotification(`Nueva nota creada en bobeda ${vaultName}`);
   createMarkdownFile(appState, refs, getTodayTitle());
 });
 
