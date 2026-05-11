@@ -115,8 +115,14 @@
   outline: none;
 }
 
+#preview-pane{
+  display: flex;
+  flex-direction: column;
+}
+
 #preview-content {
   padding: 1rem;
+  height: 10vh;
 }
 
 #preview-content strong,
