@@ -1,3 +1,7 @@
+import type { DocHandle } from "@automerge/automerge-repo";
+import type { Vault } from "./vault";
+import { renderPage } from "./main";
+
 export type TreeEntry = {
   name: string;
   kind: "file" | "directory";
@@ -14,8 +18,8 @@ export type TreeDragPayload = {
 } | null;
 
 export type TreeState = {
-  vaultHandle: FileSystemDirectoryHandle | null;
-  currentFileId: FileSystemFileHandle | null;
+  vaultHandle: DocHandle<Vault> | null;
+  currentFileId: string | null;
   dragPayload: TreeDragPayload;
   noteTitleInput: HTMLInputElement | null;
 };
@@ -283,22 +287,20 @@ export function setTreeItemEditingState(
   treeItem?.classList.toggle("editing", isActive);
 }
 
-export async function refreshFileTree(
+export async function renderNotesList(
   state: TreeState,
   container: HTMLElement | null,
-  hooks: TreeRenderHooks,
 ) {
   if (!state.vaultHandle || !container) return;
 
   container.innerHTML = "";
-  renderTree(state.vaultHandle.doc(), container, state, hooks);
+  renderTree(state.vaultHandle.doc(), container, state);
 }
 
 export function renderTree(
-  entries: TreeEntry[],
+  entries: Vault,
   parent: HTMLElement,
   state: TreeState,
-  hooks: TreeRenderHooks,
 ) {
   const ul = document.createElement("ul");
   ul.className = "tree-list";
@@ -340,14 +342,11 @@ export function renderTree(
       fileName.select();
     };
 
-    const openFile = async () => {
+    const openFile = () => {
       if (!fileName.readOnly) return;
-      try {
-        state.currentFileId = entry.id;
-        hooks.loadMarkdownFile(entry.contents, entry.name);
-      } catch (error) {
-        console.error("Failed to open file", error);
-      }
+
+      state.currentFileId = entry.id;
+      renderPage();
     };
 
     li.draggable = true;
@@ -516,19 +515,19 @@ export function renderTree(
     };
 
     li.addEventListener("click", () => {
-      void openFile();
+      openFile();
     });
 
     li.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        void openFile();
+        openFile();
       }
     });
 
     fileName.addEventListener("click", (event) => {
       event.stopPropagation();
-      void openFile();
+      openFile();
     });
 
     fileName.addEventListener("dblclick", (event) => {

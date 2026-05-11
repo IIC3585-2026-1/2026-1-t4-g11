@@ -7,17 +7,17 @@ import {
   makeUniqueMarkdownFilename,
   renameMarkdownFile,
 } from "./file_tree";
+import type { DocHandle } from "@automerge/automerge-repo";
+import type { Vault } from "./vault";
+import { renderPage } from "./main";
 
 marked.use({ headerIds: false });
 marked.use(mangle());
 const previewRenderer = new marked.Renderer();
 
 export type EditorState = {
-  folderHandle: FileSystemDirectoryHandle | null;
-  currentFileHandle: FileSystemFileHandle | null;
-  currentFileParentHandle: FileSystemDirectoryHandle | null;
-  currentFileName: string | null;
-  saveTimer: number | undefined;
+  vaultHandle: DocHandle<Vault> | null;
+  currentFileId: string | null;
 };
 
 export type EditorRefs = {
@@ -35,20 +35,6 @@ export function setNoteTitleState(
   noteTitleInput.readOnly = !isActive;
   noteTitleInput.classList.toggle("active", isActive);
   noteTitleInput.classList.toggle("inactive", !isActive);
-}
-
-export async function saveCurrentFile(
-  state: EditorState,
-  editorContent: HTMLTextAreaElement | null,
-) {
-  if (!state.currentFileHandle || !editorContent) return;
-  try {
-    const writable = await state.currentFileHandle.createWritable();
-    await writable.write(editorContent.value);
-    await writable.close();
-  } catch (error) {
-    console.error("Failed to save file", error);
-  }
 }
 
 export function updatePreview(
@@ -93,57 +79,8 @@ export function loadMarkdownFile(state: EditorState, refs: EditorRefs) {
   }
 }
 
-export async function renameCurrentFile(
-  state: EditorState,
-  refs: EditorRefs,
-  requestedName: string,
-  refreshFileTree: () => Promise<void>,
-) {
-  if (
-    !state.folderHandle ||
-    !state.currentFileHandle ||
-    !state.currentFileParentHandle ||
-    !state.currentFileName
-  )
-    return;
-
-  const targetName = requestedName.trim();
-  if (!targetName || targetName === state.currentFileName) return;
-
-  if (state.saveTimer) window.clearTimeout(state.saveTimer);
-  await saveCurrentFile(state, refs.editorContent);
-
-  const uniqueName = await makeUniqueMarkdownFilename(
-    state.currentFileParentHandle,
-    targetName,
-    state.currentFileName,
-  );
-  const result = await renameMarkdownFile(
-    state.currentFileParentHandle,
-    state.currentFileHandle,
-    state.currentFileName,
-    uniqueName,
-  );
-
-  state.currentFileHandle = result.fileHandle;
-  state.currentFileName = result.name;
-
-  if (refs.noteTitleInput) {
-    refs.noteTitleInput.value = result.name;
-  }
-
-  await refreshFileTree();
-}
-
-export async function createMarkdownFile(
-  state: EditorState,
-  refs: EditorRefs,
-  refreshFileTree: () => Promise<void>,
-) {
+export async function createMarkdownFile(state: EditorState, refs: EditorRefs) {
   try {
-    if (state.saveTimer) window.clearTimeout(state.saveTimer);
-    await saveCurrentFile(state, refs.editorContent);
-
     if (!state.vaultHandle) return;
 
     const newNote = {
@@ -151,16 +88,15 @@ export async function createMarkdownFile(
       name: "New Note",
       contents: "Hello, world!",
     };
+
     state.currentFileId = newNote.id;
     state.vaultHandle.change((vault) => {
       vault.notes.push(newNote);
     });
-    loadMarkdownFile(state, refs, newNote.contents, newNote.name);
-    setNoteTitleState(refs.noteTitleInput, true);
 
     refs.noteTitleInput?.focus();
     refs.noteTitleInput?.select();
-    await refreshFileTree();
+    renderPage();
   } catch (error) {
     console.error("Failed to create file", error);
   }

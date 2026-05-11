@@ -2,19 +2,17 @@ import "./styles/main.css";
 import {
   createMarkdownFile,
   loadMarkdownFile,
-  renameCurrentFile,
-  saveCurrentFile,
   updatePreview,
   type EditorRefs,
   type EditorState,
 } from "./editor";
 import {
-  refreshFileTree,
   setTreeItemEditingState,
   createDirectoryWithName,
   getTree,
   type TreeRenderHooks,
   type TreeState,
+  renderNotesList,
 } from "./file_tree";
 
 import {
@@ -53,7 +51,6 @@ const refs: EditorRefs = {
 };
 
 const appState: EditorState & TreeState = {
-  vaultUrl: null,
   vaultHandle: null,
   currentFileId: null,
   saveTimer: undefined,
@@ -72,29 +69,28 @@ const repo = new Repo({
 });
 
 async function vaultDocChangeHandler() {
-  await refreshFileTree(appState, filebarFiles, treeHooks);
+  renderPage();
 }
 
 const locationHash = document.location.hash.substring(1);
+let vaultUrl: AutomergeUrl | null;
 if (isValidAutomergeUrl(locationHash)) {
-  appState.vaultUrl = locationHash;
+  vaultUrl = locationHash;
 } else {
-  appState.vaultUrl = localStorage.getItem("root-vault-url");
+  vaultUrl = localStorage.getItem("root-vault-url") as AutomergeUrl | null;
 }
 
-if (appState.vaultUrl) {
-  document.location.hash = appState.vaultUrl;
-  appState.vaultHandle = await repo.find(appState.vaultUrl);
+if (vaultUrl) {
+  document.location.hash = vaultUrl;
+  appState.vaultHandle = await repo.find(vaultUrl);
   appState.vaultHandle.addListener("change", vaultDocChangeHandler);
 }
 
-const syncFileTree = async () => {
-  await refreshFileTree(appState, filebarFiles, treeHooks);
-  updateEditorView();
-};
-
-async function refreshTreeOnly() {
-  await refreshFileTree(appState, filebarFiles, treeHooks);
+export function renderPage() {
+  console.log("RENDERING");
+  console.log(appState);
+  renderNotesList(appState, filebarFiles);
+  renderEditor(appState, refs);
 }
 
 function setEditorPaneVisible(isEditorVisible: boolean) {
@@ -153,12 +149,12 @@ function bindCreateVaultButton() {
   btnEl.onclick = async () => {
     try {
       appState.vaultHandle = repo.create({
+        name: "Vault",
         notes: [],
       });
       appState.vaultHandle.addListener("change", vaultDocChangeHandler);
-      appState.vaultUrl = appState.vaultHandle.url;
-      localStorage.setItem("root-vault-url", appState.vaultUrl);
-      await syncFileTree();
+      localStorage.setItem("root-vault-url", appState.vaultHandle.url);
+      renderPage();
     } catch (error) {
       console.error("Failed to create vault", error);
     }
@@ -187,26 +183,33 @@ function setVaultViewState(hasVault: boolean) {
   }
 }
 
-function updateEditorView() {
+function renderEditor(state, refs) {
   if (!appState.vaultHandle) {
     setVaultViewState(false);
   } else {
     setVaultViewState(true);
 
-    const vaultSelected = document.getElementById(
-      "vault-selected",
-    ) as HTMLElement | null;
-    if (vaultSelected) vaultSelected.style.display = "flex";
-    if (appState.vaultHandle) {
-      const vaultName = (appState.vaultHandle as any).name || "Vault";
+    if (appState.currentFileId) {
+      setEditorPaneVisible(true);
+      loadMarkdownFile(state, refs);
+    } else {
+      const vaultSelected = document.getElementById(
+        "vault-selected",
+      ) as HTMLElement | null;
+      if (vaultSelected) vaultSelected.style.display = "flex";
+
+      const editorPane = (document.getElementById("editor-pane").style.display =
+        "none");
+      document.getElementById("preview-pane").style.display = "none";
+
+      const vaultName = appState.vaultHandle.doc().name || "Vault";
       const vaultNameElements =
         document.querySelectorAll<HTMLElement>(".vault-name");
       vaultNameElements.forEach((element) => {
         element.textContent = vaultName;
       });
+      // TODO populateRecentNotes();
     }
-
-    void populateRecentNotes();
   }
 }
 
@@ -306,15 +309,15 @@ bindCreateVaultButton();
 
 document.querySelector("#get-vault")!.addEventListener("click", async () => {
   appState.currentFileId = null;
-  syncFileTree();
+  renderPage();
 });
 
 document.querySelector("#new-file")?.addEventListener("click", () => {
-  void createMarkdownFile(appState, refs, refreshTreeOnly);
+  createMarkdownFile(appState, refs);
 });
 
 document.querySelector("#new-note-vault")?.addEventListener("click", () => {
-  void createMarkdownFile(appState, refs, refreshTreeOnly);
+  createMarkdownFile(appState, refs);
 });
 
 document.querySelector("#new-folder")?.addEventListener("click", async () => {
@@ -391,12 +394,14 @@ document.addEventListener("dragover", (event) => {
   nearest.classList.add("drop-target");
 });
 
-document.getElementById("change-vault").addEventListener("click", async () => {
-  repo.delete(appState.vaultUrl);
+document.getElementById("change-vault")?.addEventListener("click", () => {
+  if (appState.vaultHandle) {
+    repo.delete(appState.vaultHandle.url);
+  }
+
   appState.vaultHandle = null;
-  appState.vaultUrl = null;
   document.location.hash = "";
-  syncFileTree();
+  renderPage();
 });
 
 if (noteTitleInput) {
@@ -440,4 +445,4 @@ if (editorContent) {
 
 updatePreview(editorContent, previewContent);
 
-await syncFileTree();
+renderPage();
