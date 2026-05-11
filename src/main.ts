@@ -100,6 +100,7 @@ const refs: EditorRefs = {
 const appState: EditorState & TreeState = {
   vaultHandle: null,
   currentFileId: null,
+  editingNote: false,
   dragPayload: null,
   noteTitleInput,
 };
@@ -133,24 +134,12 @@ if (vaultUrl) {
 }
 
 export function renderPage() {
-  console.log("RENDERING");
-  console.log(appState);
+  console.log("RENDERING", appState);
   renderNotesList(appState, filebarFiles);
   renderEditor(appState, refs);
 }
 
 let recentNotesLoading = false;
-
-async function syncFileTree() {
-  await refreshFileTree(appState, filebarFiles, treeHooks);
-  updateCollapseFilesButtonIcon();
-  updateEditorView();
-}
-
-async function refreshTreeOnly() {
-  await refreshFileTree(appState, filebarFiles, treeHooks);
-  updateCollapseFilesButtonIcon();
-}
 
 function updateSidebarToggleIcon() {
   const icon = document.getElementById("toggle-sidebar-icon");
@@ -282,7 +271,8 @@ function renderEditor(state, refs) {
     setVaultViewState(true);
 
     if (appState.currentFileId) {
-      setEditorPaneVisible(true);
+      console.log(state.editingNote);
+      setEditorPaneVisible(state.editingNote);
       loadMarkdownFile(state, refs);
     } else {
       const vaultSelected = document.getElementById(
@@ -388,6 +378,7 @@ if (toggleViewButton) {
     ) as HTMLElement | null;
     if (!editorPane || !previewPane) return;
     const isEditorVisible = editorPane.style.display !== "none";
+    appState.editingNote = !isEditorVisible;
     setEditorPaneVisible(!isEditorVisible);
   });
 }
@@ -405,46 +396,6 @@ if (optionsButton) {
     event.stopPropagation();
     if (appState.currentFileId) {
       toggleOptionsMenu();
-    }
-  });
-}
-
-if (deleteNoteButton) {
-  deleteNoteButton.addEventListener("click", async (ev) => {
-    ev.stopPropagation();
-    setOptionsMenuOpen(false);
-
-    if (
-      !appState.currentFileHandle ||
-      !appState.currentFileParentHandle ||
-      !appState.currentFileName
-    )
-      return;
-
-    try {
-      await appState.currentFileParentHandle.removeEntry(
-        appState.currentFileName,
-      );
-
-      // clear current file state
-      appState.currentFileHandle = null;
-      appState.currentFileParentHandle = null;
-      appState.currentFileName = null;
-
-      // clear editor UI
-      if (refs.editorContent) {
-        refs.editorContent.value = "";
-        updatePreview(refs.editorContent, refs.previewContent);
-      }
-      if (refs.noteTitleInput) {
-        refs.noteTitleInput.value = "";
-        setNoteTitleState(refs.noteTitleInput, false);
-      }
-
-      await refreshTreeOnly();
-      updateEditorView();
-    } catch (error) {
-      console.error("Failed to delete note", error);
     }
   });
 }
@@ -566,7 +517,7 @@ document.getElementById("change-vault")?.addEventListener("click", () => {
   renderPage();
 });
 
-document.getElementById("delete-note")?.addEventListener("click", () => {
+deleteNoteButton?.addEventListener("click", () => {
   if (!appState.vaultHandle) return;
   if (!appState.currentFileId) return;
 

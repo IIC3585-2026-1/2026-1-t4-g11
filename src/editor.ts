@@ -17,6 +17,7 @@ const previewRenderer = new marked.Renderer();
 
 export type EditorState = {
   vaultHandle: DocHandle<Vault> | null;
+  editingNote: boolean;
   currentFileId: string | null;
 };
 
