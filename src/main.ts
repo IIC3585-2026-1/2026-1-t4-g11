@@ -32,7 +32,8 @@ import { messaging } from "./firebase";
 
 // URL del servidor de push (cambiar si se deploya)
 const PUSH_SERVER = import.meta.env.VITE_PUSH_SERVER ?? "http://localhost:3000";
-const VAPID_PUBLIC = "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY";
+const VAPID_PUBLIC =
+  "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY";
 
 async function initNotifications() {
   const permission = await Notification.requestPermission();
@@ -43,7 +44,9 @@ async function initNotifications() {
 
     // Registrar suscripción directa en nuestro servidor (para demo push)
     try {
-      const swReg = await navigator.serviceWorker.register("/push-sw.js", { scope: "/push-sw-scope/" });
+      const swReg = await navigator.serviceWorker.register("/push-sw.js", {
+        scope: "/push-sw-scope/",
+      });
       await navigator.serviceWorker.ready;
       let sub = await swReg.pushManager.getSubscription();
       if (!sub) {
@@ -67,7 +70,7 @@ async function initNotifications() {
 onMessage(messaging, (payload) => {
   console.log("Mensaje recibido con la app abierta:", payload);
 
-  const title = payload.notification?.title ?? "Notificación";
+  const title = "Carbon";
   const body = payload.notification?.body ?? "";
 
   new Notification(title, {
@@ -76,6 +79,15 @@ onMessage(messaging, (payload) => {
 });
 
 initNotifications();
+
+async function sendNotification(msg: string) {
+  const body = { body: msg };
+  await fetch(`${PUSH_SERVER}/notify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
 
 if (editorContent) editorContent.spellcheck = true;
 
@@ -474,10 +486,14 @@ document.querySelector("#get-vault")!.addEventListener("click", async () => {
 
 document.querySelector("#new-file")?.addEventListener("click", () => {
   createMarkdownFile(appState, refs);
+  const vaultName = appState.vaultHandle?.doc().name;
+  sendNotification(`Nueva nota creada en bobeda ${vaultName}`);
 });
 
 document.querySelector("#new-note-vault")?.addEventListener("click", () => {
   createMarkdownFile(appState, refs);
+  const vaultName = appState.vaultHandle?.doc().name;
+  sendNotification(`Nueva nota creada en bobeda ${vaultName}`);
 });
 
 function getTodayTitle() {
@@ -544,6 +560,9 @@ deleteNoteButton?.addEventListener("click", () => {
 
   appState.vaultHandle.change((vault) => {
     const index = vault.notes.findIndex((n) => n.id === appState.currentFileId);
+    sendNotification(
+      `Nota ${vault.notes[index].name} borrada en bobeda ${vault.name}`,
+    );
     vault.notes.deleteAt(index);
   });
   appState.currentFileId = null;
@@ -560,16 +579,16 @@ if (noteTitleInput) {
   noteTitleInput.addEventListener("blur", () => {
     noteTitleInput.classList.add("inactive");
     if (appState.currentFileId) {
-    appState.vaultHandle?.change((vault) => {
-      const note = vault.notes.find((n) => n.id === appState.currentFileId);
-      if (note) note.name = noteTitleInput.value;
-    });
-  } else if (appState.vaultHandle) {
-    appState.vaultHandle.change((vault) => {
-      vault.name = noteTitleInput.value;
-    });
-  }
-  renderPage();
+      appState.vaultHandle?.change((vault) => {
+        const note = vault.notes.find((n) => n.id === appState.currentFileId);
+        if (note) note.name = noteTitleInput.value;
+      });
+    } else if (appState.vaultHandle) {
+      appState.vaultHandle.change((vault) => {
+        vault.name = noteTitleInput.value;
+      });
+    }
+    renderPage();
   });
   noteTitleInput.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {

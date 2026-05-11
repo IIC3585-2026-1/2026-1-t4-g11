@@ -18,7 +18,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log("Mensaje recibido en background:", payload);
 
-  self.registration.showNotification(payload.notification.title, {
+  self.registration.showNotification("Carbon (background)", {
     body: payload.notification.body,
     icon: "/carbon.svg",
   });
