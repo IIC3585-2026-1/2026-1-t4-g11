@@ -79,7 +79,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-inline: 1rem;;
+  padding-inline: 1rem;
 }
 
 #editor-content {
@@ -120,7 +120,7 @@
   outline: none;
 }
 
-#preview-pane{
+#preview-pane {
   display: flex;
   flex-direction: column;
 }
