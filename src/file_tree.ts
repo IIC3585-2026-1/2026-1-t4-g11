@@ -297,6 +297,42 @@ export async function renderNotesList(
   renderTree(state.vaultHandle.doc(), container, state);
 }
 
+export function hasExpandedFolders(container: HTMLElement | null) {
+  if (!container) return false;
+
+  const folders = Array.from(
+    container.querySelectorAll<HTMLElement>(".tree-item[aria-expanded]"),
+  );
+  return folders.some(
+    (folder) => folder.getAttribute("aria-expanded") === "true",
+  );
+}
+
+export function setAllFoldersExpanded(
+  container: HTMLElement | null,
+  isExpanded: boolean,
+) {
+  if (!container) return;
+
+  const folders = Array.from(
+    container.querySelectorAll<HTMLElement>(".tree-item[aria-expanded]"),
+  );
+  for (const folder of folders) {
+    const childrenContainer = folder.querySelector(
+      ".children",
+    ) as HTMLElement | null;
+    const caret = folder.querySelector(".caret") as HTMLElement | null;
+    if (!childrenContainer || !caret) continue;
+
+    childrenContainer.classList.toggle("collapsed", !isExpanded);
+    childrenContainer.classList.toggle("expanded", isExpanded);
+    caret.textContent = isExpanded
+      ? "keyboard_arrow_down"
+      : "keyboard_arrow_right";
+    folder.setAttribute("aria-expanded", String(isExpanded));
+  }
+}
+
 export function renderTree(
   entries: Vault,
   parent: HTMLElement,

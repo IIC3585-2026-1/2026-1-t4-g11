@@ -26,6 +26,36 @@ import { BrowserWebSocketClientAdapter } from "@automerge/automerge-repo-network
 const editorContent = document.getElementById(
   "editor-input",
 ) as HTMLTextAreaElement | null;
+
+import { getToken, onMessage } from "firebase/messaging";
+import { messaging } from "./firebase";
+
+async function initNotifications() {
+  const permission = await Notification.requestPermission();
+
+  if (permission === "granted") {
+    const token = await getToken(messaging, {
+      vapidKey:
+        "BIzF4QkrDPrWexnLeXEmxgqvjHD0iPsEFsInMjBY5TJ5dHZ8W9UBAkWG6zhnWOfCzczrLSrBzd4s2DMYkcCdJQY",
+    });
+
+    console.log("FCM TOKEN:", token);
+  }
+}
+
+onMessage(messaging, (payload) => {
+  console.log("Mensaje recibido con la app abierta:", payload);
+
+  const title = payload.notification?.title ?? "Notificación";
+  const body = payload.notification?.body ?? "";
+
+  new Notification(title, {
+    body,
+  });
+});
+
+initNotifications();
+
 if (editorContent) editorContent.spellcheck = true;
 
 const previewContent = document.getElementById(
@@ -42,6 +72,24 @@ const app = document.getElementById("app") as HTMLElement | null;
 const toggleBarsButton = document.querySelector(
   "#toggle-sidebar",
 ) as HTMLElement | null;
+const sidebarToggle = document.querySelector(
+  "#sidebar-toggle",
+) as HTMLInputElement | null;
+const collapseFilesButton = document.querySelector(
+  "#collapse-files",
+) as HTMLButtonElement | null;
+const collapseFilesIcon = collapseFilesButton?.querySelector(
+  ".material-symbols-outlined",
+) as HTMLElement | null;
+const optionsButton = document.querySelector(
+  "#options",
+) as HTMLButtonElement | null;
+const optionsMenu = document.querySelector(
+  "#options-menu",
+) as HTMLElement | null;
+const deleteNoteButton = document.querySelector(
+  "#delete-note",
+) as HTMLButtonElement | null;
 
 const refs: EditorRefs = {
   editorContent,
@@ -91,6 +139,43 @@ export function renderPage() {
   renderEditor(appState, refs);
 }
 
+let recentNotesLoading = false;
+
+async function syncFileTree() {
+  await refreshFileTree(appState, filebarFiles, treeHooks);
+  updateCollapseFilesButtonIcon();
+  updateEditorView();
+}
+
+async function refreshTreeOnly() {
+  await refreshFileTree(appState, filebarFiles, treeHooks);
+  updateCollapseFilesButtonIcon();
+}
+
+function updateSidebarToggleIcon() {
+  const icon = document.getElementById("toggle-sidebar-icon");
+  if (!icon) return;
+
+  const isMobile = isMobileSidebarMode();
+  const isOpen = isMobile
+    ? !!sidebarToggle?.checked
+    : document.getElementById("sidebar")?.style.display !== "none";
+  icon.textContent = isOpen ? "left_panel_close" : "left_panel_open";
+}
+
+function setOptionsMenuOpen(isOpen: boolean) {
+  if (!optionsMenu || !optionsButton) return;
+
+  optionsMenu.hidden = !isOpen;
+  optionsButton.setAttribute("aria-expanded", String(isOpen));
+}
+
+function toggleOptionsMenu() {
+  if (!optionsMenu) return;
+
+  setOptionsMenuOpen(optionsMenu.hasAttribute("hidden"));
+}
+
 function setEditorPaneVisible(isEditorVisible: boolean) {
   const editorPane = document.getElementById(
     "editor-pane",
@@ -116,6 +201,8 @@ function syncSidebarVisibilityForViewport() {
   if (isMobileSidebarMode()) {
     sidebar.style.removeProperty("display");
   }
+
+  updateSidebarToggleIcon();
 }
 
 function updateSidebarState() {
@@ -124,8 +211,13 @@ function updateSidebarState() {
   const sidebar = document.getElementById("sidebar") as HTMLElement | null;
   if (!sidebar) return;
 
+  if (!toggleBarsButton) return;
+
   if (isMobileSidebarMode()) {
-    // Let the checkbox + CSS drive sidebar visibility on narrow aspect ratios.
+    if (sidebarToggle) {
+      sidebarToggle.checked = !sidebarToggle.checked;
+    }
+    updateSidebarToggleIcon();
     return;
   }
 
@@ -136,6 +228,8 @@ function updateSidebarState() {
   } else {
     sidebar.style.display = "none";
   }
+
+  updateSidebarToggleIcon();
 }
 
 function bindCreateVaultButton() {
@@ -281,8 +375,11 @@ async function populateRecentNotes() {
 const toggleViewButton = document.querySelector(
   "#toggle-view",
 ) as HTMLButtonElement | null;
-if (toggleViewButton && appState.currentFileId) {
+
+if (toggleViewButton) {
   toggleViewButton.addEventListener("click", () => {
+    if (!appState.currentFileId) return;
+
     const editorPane = document.getElementById(
       "editor-pane",
     ) as HTMLElement | null;
@@ -290,7 +387,6 @@ if (toggleViewButton && appState.currentFileId) {
       "preview-pane",
     ) as HTMLElement | null;
     if (!editorPane || !previewPane) return;
-
     const isEditorVisible = editorPane.style.display !== "none";
     setEditorPaneVisible(!isEditorVisible);
   });
@@ -299,6 +395,98 @@ if (toggleViewButton && appState.currentFileId) {
 if (toggleBarsButton) {
   toggleBarsButton.addEventListener("click", () => {
     updateSidebarState();
+  });
+}
+
+if (optionsButton) {
+  optionsButton.setAttribute("aria-haspopup", "menu");
+  optionsButton.setAttribute("aria-expanded", "false");
+  optionsButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (appState.currentFileId) {
+      toggleOptionsMenu();
+    }
+  });
+}
+
+if (deleteNoteButton) {
+  deleteNoteButton.addEventListener("click", async (ev) => {
+    ev.stopPropagation();
+    setOptionsMenuOpen(false);
+
+    if (
+      !appState.currentFileHandle ||
+      !appState.currentFileParentHandle ||
+      !appState.currentFileName
+    )
+      return;
+
+    try {
+      await appState.currentFileParentHandle.removeEntry(
+        appState.currentFileName,
+      );
+
+      // clear current file state
+      appState.currentFileHandle = null;
+      appState.currentFileParentHandle = null;
+      appState.currentFileName = null;
+
+      // clear editor UI
+      if (refs.editorContent) {
+        refs.editorContent.value = "";
+        updatePreview(refs.editorContent, refs.previewContent);
+      }
+      if (refs.noteTitleInput) {
+        refs.noteTitleInput.value = "";
+        setNoteTitleState(refs.noteTitleInput, false);
+      }
+
+      await refreshTreeOnly();
+      updateEditorView();
+    } catch (error) {
+      console.error("Failed to delete note", error);
+    }
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (!optionsMenu || !optionsButton) return;
+  const target = event.target as Node | null;
+  if (
+    target &&
+    (optionsMenu.contains(target) || optionsButton.contains(target))
+  )
+    return;
+  setOptionsMenuOpen(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setOptionsMenuOpen(false);
+  }
+});
+
+if (sidebarToggle) {
+  sidebarToggle.addEventListener("change", () => {
+    updateSidebarToggleIcon();
+  });
+}
+
+if (collapseFilesButton) {
+  collapseFilesButton.addEventListener("click", () => {
+    const shouldCollapse = collapseFilesIcon?.textContent === "collapse_all";
+    setAllFoldersExpanded(filebarFiles, !shouldCollapse);
+    updateCollapseFilesButtonIcon();
+  });
+}
+
+if (filebarFiles) {
+  filebarFiles.addEventListener("click", () => {
+    window.requestAnimationFrame(updateCollapseFilesButtonIcon);
+  });
+
+  filebarFiles.addEventListener("keydown", () => {
+    window.requestAnimationFrame(updateCollapseFilesButtonIcon);
   });
 }
 
@@ -320,42 +508,16 @@ document.querySelector("#new-note-vault")?.addEventListener("click", () => {
   createMarkdownFile(appState, refs);
 });
 
-document.querySelector("#new-folder")?.addEventListener("click", async () => {
-  try {
-    if (!appState.folderHandle) {
-      appState.folderHandle = await window.showDirectoryPicker();
-    }
-    if (!appState.folderHandle) return;
+function getTodayTitle() {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year = String(now.getFullYear());
+  return `${day}-${month}-${year}`;
+}
 
-    // create a new folder with a unique name and refresh the tree
-    const result = await createDirectoryWithName(
-      appState.folderHandle,
-      "Nueva carpeta",
-    );
-    if (!result) return;
-    const createdName = result.name;
-    await refreshFileTree(appState, filebarFiles, treeHooks);
-
-    // find the newly created folder input and activate editing
-    if (!filebarFiles) return;
-    const inputs = Array.from(
-      filebarFiles.querySelectorAll<HTMLInputElement>(
-        "input.file-name.tree-name-input",
-      ),
-    );
-    for (const input of inputs) {
-      if (input.value !== createdName) continue;
-      const treeItem = input.closest(".tree-item") as HTMLElement | null;
-      // only consider directory entries (they have aria-expanded)
-      if (!treeItem || !treeItem.hasAttribute("aria-expanded")) continue;
-      setTreeItemEditingState(treeItem, input, true);
-      input.focus();
-      input.select();
-      break;
-    }
-  } catch (error) {
-    console.error("Failed to create folder", error);
-  }
+document.querySelector("#new-file-today")?.addEventListener("click", () => {
+  createMarkdownFile(appState, refs, getTodayTitle());
 });
 
 document.addEventListener("dragend", () => {
@@ -460,5 +622,6 @@ if (editorContent) {
 }
 
 updatePreview(editorContent, previewContent);
+updateSidebarToggleIcon();
 
 renderPage();

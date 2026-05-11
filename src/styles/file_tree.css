@@ -4,6 +4,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  overflow-y: auto;
 }
 .tree-item {
   margin: 0;
@@ -54,6 +55,8 @@
   font: inherit;
   outline: none;
   padding-right: 0.5rem;
+
+  font-weight: 500;
 }
 .caret {
   display: flex;
@@ -72,7 +75,7 @@
 }
 .tree-name,
 .file-name {
-  color: var(--text);
+  color: var(--text-secondary);
   display: inline;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -108,6 +111,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--border);
+  background: var(--text-secondary);
+  color: var(--text-secondary);
   opacity: 1;
 }

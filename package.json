@@ -1,5 +1,5 @@
 {
-  "name": "t4",
+  "name": "carbon",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -13,6 +13,7 @@
     "@automerge/automerge-repo-network-broadcastchannel": "^2.5.5",
     "@automerge/automerge-repo-network-websocket": "^2.5.5",
     "@automerge/automerge-repo-storage-indexeddb": "^2.5.5",
+    "firebase": "^12.13.0",
     "katex": "^0.16.45",
     "marked": "^5.1.2",
     "marked-extended-latex": "^1.1.0",

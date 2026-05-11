@@ -83,13 +83,17 @@ export function loadMarkdownFile(state: EditorState, refs: EditorRefs) {
   }
 }
 
-export async function createMarkdownFile(state: EditorState, refs: EditorRefs) {
+export async function createMarkdownFile(
+  state: EditorState,
+  refs: EditorRefs,
+  name = "Nueva nota",
+) {
   try {
     if (!state.vaultHandle) return;
 
     const newNote = {
       id: crypto.randomUUID(),
-      name: "New Note",
+      name,
       contents: "Hello, world!",
     };
 
