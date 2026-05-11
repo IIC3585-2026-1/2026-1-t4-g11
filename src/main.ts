@@ -35,9 +35,6 @@ const collapseFilesIcon = collapseFilesButton?.querySelector('.material-symbols-
 const optionsButton = document.querySelector('#options') as HTMLButtonElement | null;
 const optionsMenu = document.querySelector('#options-menu') as HTMLElement | null;
 const deleteNoteButton = document.querySelector('#delete-note') as HTMLButtonElement | null;
-const optionsNewFileTodayButton = document.querySelector('#options-new-file-today') as HTMLButtonElement | null;
-const optionsToggleViewButton = document.querySelector('#options-toggle-view') as HTMLButtonElement | null;
-const optionsCollapseFilesButton = document.querySelector('#options-collapse-files') as HTMLButtonElement | null;
 
 const refs: EditorRefs = {
     editorContent,
