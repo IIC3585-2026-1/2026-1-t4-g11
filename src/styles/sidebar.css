@@ -11,7 +11,7 @@
   display: none;
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #sidebar {
     position: fixed;
     top: 0;
@@ -59,7 +59,7 @@
   border-right: 1px solid var(--grey);
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #toolbar {
     flex-direction: row;
     border-right: none;
@@ -77,7 +77,7 @@
   max-width: 15vw;
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #filebar {
     border-right: none;
     max-width: none;
@@ -95,7 +95,7 @@
   justify-content: center;
 }
 
-@media (aspect-ratio < 1/2) {
+@media (aspect-ratio < 3/5) {
   #filebar-buttons {
     justify-content: flex-start;
   }

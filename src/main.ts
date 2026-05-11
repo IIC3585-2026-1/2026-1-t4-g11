@@ -200,7 +200,7 @@ function setEditorPaneVisible(isEditorVisible: boolean) {
 }
 
 function isMobileSidebarMode() {
-  return window.matchMedia("(max-aspect-ratio: 1/2)").matches;
+  return window.matchMedia("(max-aspect-ratio: 3/5)").matches;
 }
 
 function syncSidebarVisibilityForViewport() {
