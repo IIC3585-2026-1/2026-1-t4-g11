@@ -29,15 +29,6 @@
         aria-label="Toggle sidebar"
       />
       <div id="sidebar">
-        <div id="toolbar">
-          <span class="material-symbols-outlined toolbar-icon">search</span>
-          <button id="new-file-today" class="icon-btn">
-            <span class="material-symbols-outlined toolbar-icon"
-              >calendar_today</span
-            >
-          </button>
-          <span class="material-symbols-outlined toolbar-icon">bookmark</span>
-        </div>
         <div id="filebar">
           <div id="filebar-buttons">
             <button id="new-file" class="icon-btn">
@@ -45,18 +36,13 @@
                 >edit_square</span
               >
             </button>
-            <button id="new-folder" class="icon-btn">
-              <span class="material-symbols-outlined filebar-icon"
-                >create_new_folder</span
+            <button id="new-file-today" class="icon-btn">
+              <span class="material-symbols-outlined toolbar-icon"
+                >calendar_today</span
               >
             </button>
             <button id="sort-files" class="icon-btn">
               <span class="material-symbols-outlined filebar-icon">sort</span>
-            </button>
-            <button id="collapse-files" class="icon-btn">
-              <span class="material-symbols-outlined filebar-icon"
-                >collapse_all</span
-              >
             </button>
           </div>
           <div id="filebar-files"></div>
@@ -66,10 +52,7 @@
               <span class="vault-name">Crea una boveda</span>
             </div>
             <button id="get-vault" class="icon-btn">
-              <span class="material-symbols-outlined vault-icon">refresh</span>
-            </button>
-            <button id="settings" class="icon-btn">
-              <span class="material-symbols-outlined vault-icon">settings</span>
+              <span class="material-symbols-outlined vault-icon">close</span>
             </button>
           </div>
         </div>
@@ -161,12 +144,6 @@
             aria-hidden="true"
           ></label>
         </div>
-        <button id="get-vault" class="icon-btn">
-          <span class="material-symbols-outlined">refresh</span>
-        </button>
-        <button id="settings" class="icon-btn">
-          <span class="material-symbols-outlined">settings</span>
-        </button>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
