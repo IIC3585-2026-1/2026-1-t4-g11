@@ -8,9 +8,9 @@ export default defineConfig({
     VitePWA({
       includeAssets: ["favicon.ico", "apple-touch-icon.png", "mask-icon.svg"],
       manifest: {
-        name: "G11-Coal",
-        short_name: "Coal",
-        description: "Coal: collaborative note taker",
+        name: "G11-Carbon",
+        short_name: "Carbon",
+        description: "Collaborative note taker",
         theme_color: "#ffffff",
         icons: [
           {
