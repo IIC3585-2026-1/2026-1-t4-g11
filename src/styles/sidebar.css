@@ -71,6 +71,7 @@
 
 #filebar {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.5rem;
   border-right: 1px solid var(--grey);
@@ -84,6 +85,7 @@
     flex: 1;
     min-height: 0;
     overflow: hidden;
+    width: auto;
   }
 }
 
