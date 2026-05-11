@@ -92,6 +92,13 @@
   gap: 0.5rem;
   padding: 1rem 1rem;
   flex-shrink: 0;
+  justify-content: center;
+}
+
+@media (aspect-ratio < 1/2) {
+  #filebar-buttons {
+    justify-content: flex-start;
+  }
 }
 
 #filebar-files {
