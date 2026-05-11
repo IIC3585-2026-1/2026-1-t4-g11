@@ -2,11 +2,6 @@ import { marked } from "marked";
 import { mangle } from "marked-mangle";
 import Katex from "katex";
 import extendedLatex from "marked-extended-latex";
-import {
-  createNewFileWithContent,
-  makeUniqueMarkdownFilename,
-  renameMarkdownFile,
-} from "./file_tree";
 import type { DocHandle } from "@automerge/automerge-repo";
 import type { Vault } from "./vault";
 import { renderPage } from "./main";
@@ -66,10 +61,13 @@ export function loadMarkdownFile(state: EditorState, refs: EditorRefs) {
     "vault-selected",
   ) as HTMLElement | null;
   if (vaultSelected) vaultSelected.style.display = "none";
+  if (!state.vaultHandle) return;
 
   const note = state.vaultHandle
     .doc()
     .notes.find((n) => n.id == state.currentFileId);
+
+  if (!note) return;
 
   if (refs.noteTitleInput && note.name) {
     refs.noteTitleInput.value = note.name;

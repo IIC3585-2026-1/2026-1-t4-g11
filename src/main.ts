@@ -6,14 +6,7 @@ import {
   type EditorRefs,
   type EditorState,
 } from "./editor";
-import {
-  setTreeItemEditingState,
-  createDirectoryWithName,
-  getTree,
-  type TreeRenderHooks,
-  type TreeState,
-  renderNotesList,
-} from "./file_tree";
+import { type TreeState, renderNotesList } from "./file_tree";
 
 import {
   isValidAutomergeUrl,
@@ -108,12 +101,6 @@ const toggleBarsButton = document.querySelector(
 const sidebarToggle = document.querySelector(
   "#sidebar-toggle",
 ) as HTMLInputElement | null;
-const collapseFilesButton = document.querySelector(
-  "#collapse-files",
-) as HTMLButtonElement | null;
-const collapseFilesIcon = collapseFilesButton?.querySelector(
-  ".material-symbols-outlined",
-) as HTMLElement | null;
 const optionsButton = document.querySelector(
   "#options",
 ) as HTMLButtonElement | null;
@@ -136,11 +123,6 @@ const appState: EditorState & TreeState = {
   editingNote: false,
   dragPayload: null,
   noteTitleInput,
-};
-
-const treeHooks: TreeRenderHooks = {
-  setTreeItemEditingState,
-  loadMarkdownFile: () => loadMarkdownFile(appState, refs),
 };
 
 const repo = new Repo({
@@ -323,75 +305,11 @@ function renderEditor(state, refs) {
         element.textContent = vaultName;
       });
 
-      noteTitleInput.value = appState.vaultHandle.doc().name;
-      noteTitleInput.placeholder = appState.vaultHandle.doc().name;
-      // TODO populateRecentNotes();
-    }
-  }
-}
-
-async function populateRecentNotes() {
-  return; // TODO
-  const recentEl = document.getElementById(
-    "recent-notes",
-  ) as HTMLUListElement | null;
-  if (!recentEl || !appState.vaultHandle) return;
-
-  if (recentEl.children.length) return;
-
-  const tree = await getTree(appState.folderHandle);
-  const files: Array<{ name: string; handle: FileSystemFileHandle }> = [];
-  function walk(entries: typeof tree) {
-    for (const e of entries) {
-      if (e.kind === "file" && e.handle)
-        files.push({ name: e.name, handle: e.handle as FileSystemFileHandle });
-      if (e.children && e.children.length) walk(e.children);
-    }
-  }
-  walk(tree);
-
-  // load lastModified for each file
-  const withTimes = await Promise.all(
-    files.map(async (f) => {
-      try {
-        const file = await f.handle.getFile();
-        return { ...f, lastModified: file.lastModified };
-      } catch {
-        return { ...f, lastModified: 0 } as any;
+      if (noteTitleInput) {
+        noteTitleInput.value = appState.vaultHandle.doc().name;
+        noteTitleInput.placeholder = appState.vaultHandle.doc().name;
       }
-    }),
-  );
-
-  withTimes.sort((a, b) => (b.lastModified || 0) - (a.lastModified || 0));
-  const top = withTimes.slice(0, 5);
-
-  for (const t of top) {
-    const li = document.createElement("li");
-    li.className = "recent-note-item";
-    li.style.padding = "6px 8px";
-    li.style.cursor = "pointer";
-    const date = t.lastModified
-      ? new Date(t.lastModified).toLocaleString()
-      : "";
-    li.textContent = `${t.name} ${date ? "— " + date : ""}`;
-    li.addEventListener("click", async () => {
-      try {
-        const file = await t.handle.getFile();
-        const text = await file.text();
-        treeHooks.loadMarkdownFile(text, t.name);
-        const preview = document.getElementById(
-          "preview-pane",
-        ) as HTMLElement | null;
-        const editorP = document.getElementById(
-          "editor-pane",
-        ) as HTMLElement | null;
-        if (preview) preview.style.display = "none";
-        if (editorP) editorP.style.display = "flex";
-      } catch (error) {
-        console.error("Failed to open recent note", error);
-      }
-    });
-    recentEl.appendChild(li);
+    }
   }
 }
 
@@ -456,24 +374,6 @@ if (sidebarToggle) {
   });
 }
 
-if (collapseFilesButton) {
-  collapseFilesButton.addEventListener("click", () => {
-    const shouldCollapse = collapseFilesIcon?.textContent === "collapse_all";
-    setAllFoldersExpanded(filebarFiles, !shouldCollapse);
-    updateCollapseFilesButtonIcon();
-  });
-}
-
-if (filebarFiles) {
-  filebarFiles.addEventListener("click", () => {
-    window.requestAnimationFrame(updateCollapseFilesButtonIcon);
-  });
-
-  filebarFiles.addEventListener("keydown", () => {
-    window.requestAnimationFrame(updateCollapseFilesButtonIcon);
-  });
-}
-
 syncSidebarVisibilityForViewport();
 window.addEventListener("resize", syncSidebarVisibilityForViewport);
 
@@ -508,42 +408,6 @@ document.querySelector("#new-file-today")?.addEventListener("click", () => {
   createMarkdownFile(appState, refs, getTodayTitle());
 });
 
-document.addEventListener("dragend", () => {
-  appState.dragPayload = null;
-  document
-    .querySelectorAll(".tree-item.drop-target")
-    .forEach((element) => element.classList.remove("drop-target"));
-});
-
-document.addEventListener("dragover", (event) => {
-  event.preventDefault();
-  const x = (event as DragEvent).clientX;
-  const y = (event as DragEvent).clientY;
-  const element = document.elementFromPoint(x, y) as HTMLElement | null;
-
-  document
-    .querySelectorAll(".tree-item.drop-target")
-    .forEach((treeItem) => treeItem.classList.remove("drop-target"));
-  if (!element) return;
-
-  const nearest = element.closest(".tree-item") as HTMLElement | null;
-  if (!nearest) return;
-
-  const hasChildren = !!nearest.querySelector(".children");
-  if (!hasChildren) {
-    const container = nearest.closest(".children") as HTMLElement | null;
-    if (!container) return;
-
-    const parentFolderLi = container.closest(
-      ".tree-item",
-    ) as HTMLElement | null;
-    if (parentFolderLi) parentFolderLi.classList.add("drop-target");
-    return;
-  }
-
-  nearest.classList.add("drop-target");
-});
-
 document.getElementById("change-vault")?.addEventListener("click", () => {
   if (appState.vaultHandle) {
     repo.delete(appState.vaultHandle.url);
@@ -563,6 +427,7 @@ deleteNoteButton?.addEventListener("click", () => {
     sendNotification(
       `Nota ${vault.notes[index].name} borrada en bobeda ${vault.name}`,
     );
+    // @ts-ignore: proxy function type incorrect for automerge document
     vault.notes.deleteAt(index);
   });
   appState.currentFileId = null;
@@ -591,16 +456,19 @@ if (noteTitleInput) {
     renderPage();
   });
   noteTitleInput.addEventListener("keydown", (event) => {
+    if (!appState.vaultHandle) return;
     if (event.key === "Enter") {
       event.preventDefault();
       if (appState.currentFileId) {
         appState.vaultHandle.change((vault) => {
           const note = vault.notes.find((n) => n.id === appState.currentFileId);
-          note.name = event.target.value;
+          if (note) {
+            note.name = noteTitleInput.value;
+          }
         });
       } else {
         appState.vaultHandle.change((vault) => {
-          vault.name = event.target.value;
+          vault.name = noteTitleInput.value;
         });
       }
 
@@ -615,7 +483,7 @@ if (noteTitleInput) {
 }
 
 if (editorContent) {
-  editorContent.addEventListener("input", (e) => {
+  editorContent.addEventListener("input", () => {
     updatePreview(editorContent, previewContent);
 
     if (!appState.vaultHandle) return;
@@ -626,7 +494,7 @@ if (editorContent) {
         (n) => n.id == appState.currentFileId,
       );
       const note = vault.notes[index];
-      vault.notes[index] = { ...note, contents: e.target.value };
+      vault.notes[index] = { ...note, contents: editorContent.value };
     });
   });
 }
